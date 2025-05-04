@@ -23,7 +23,7 @@ const Dashboard: React.FC = () => {
                   <CardDescription>Add, edit or remove menu items</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p>Organize your restaurant's offerings by categories and manage prices.</p>
+                  <p>Organize your TapNServe offerings by categories and manage prices.</p>
                 </CardContent>
               </Card>
               

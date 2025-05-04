@@ -64,7 +64,7 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				restaurant: {
-					primary: '#1a365d',
+					primary: '#8B0000', // Dark red instead of blue
 					secondary: '#ed8936',
 					accent: '#38a169',
 					light: '#f7fafc',
