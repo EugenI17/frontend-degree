@@ -1,4 +1,3 @@
-
 import {toast} from "sonner";
 
 export interface SetupCheckResponse {
@@ -21,6 +20,12 @@ export interface AuthResponse {
   refreshToken: string;
   userType: 'admin' | 'employee';
   username: string;
+}
+
+export interface RestaurantInfo {
+  username: string;
+  password: string;
+  restaurantName: string;
 }
 
 const API_BASE_URL = 'http://localhost:8081/api';
@@ -211,6 +216,42 @@ export const api = {
       console.error('Error checking initial setup:', error);
       toast.error('Failed to connect to server');
       return { initialSetupNeeded: false };
+    }
+  },
+
+  async getRestaurantInfo(): Promise<RestaurantInfo | null> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/restaurant`, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to fetch restaurant info');
+        return null;
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching restaurant info:', error);
+      return null;
+    }
+  },
+
+  async getRestaurantLogo(): Promise<Blob | null> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/restaurant/logo`);
+      
+      if (!response.ok) {
+        console.error('Failed to fetch restaurant logo');
+        return null;
+      }
+      
+      return await response.blob();
+    } catch (error) {
+      console.error('Error fetching restaurant logo:', error);
+      return null;
     }
   },
 
