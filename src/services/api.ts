@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 
 export interface SetupCheckResponse {
@@ -59,12 +60,37 @@ function getUserTypeFromToken(token: string): 'admin' | 'waiter' {
       const roles = Array.isArray(decoded.roles) ? decoded.roles : [decoded.roles];
       console.log('Extracted roles:', roles);
       
-      // Check for admin role
-      if (roles.some(role => role === 'ROLE_ADMIN' || role === 'ADMIN')) {
+      // Improved role detection logic - check for exact role matches
+      const isAdmin = roles.some(role => 
+        role === 'ROLE_ADMIN' || 
+        role === 'ADMIN'
+      );
+      
+      if (isAdmin) {
         console.log('Found admin role in token');
         return 'admin';
-      } else if (roles.some(role => role === 'ROLE_EMPLOYEE' || role === 'EMPLOYEE')) {
-        console.log('Found employee role in token');
+      }
+      
+      // If not admin, check for employee/waiter roles
+      const isEmployee = roles.some(role => 
+        role === 'ROLE_EMPLOYEE' || 
+        role === 'EMPLOYEE' ||
+        role === 'WAITER' ||
+        role === 'ROLE_WAITER'
+      );
+      
+      if (isEmployee) {
+        console.log('Found employee/waiter role in token');
+        return 'waiter';
+      }
+    }
+    
+    // More specific default role assignment based on username
+    if (decoded.sub) {
+      if (decoded.sub.toLowerCase().includes('admin')) {
+        return 'admin';
+      } else if (decoded.sub.toLowerCase().includes('emp') || 
+                 decoded.sub.toLowerCase().includes('waiter')) {
         return 'waiter';
       }
     }
@@ -150,11 +176,20 @@ export const api = {
       if (mockResponse(true)) {
         console.log('DEV MODE: Using mock login response');
         
-        // For testing, you can use this example token which contains admin role
-        const mockToken = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sInN1YiI6InRlc3QiLCJpYXQiOjE3NDYzNzAwODIsImV4cCI6MTc0NjM3MDk4Mn0.j48QX0raarD0SgHFbPgKJDwb7TDAH8kucGRmY7B4Iks";
+        // Use different mock tokens based on username to simulate different roles
+        let mockToken;
+        let userType: 'admin' | 'waiter';
         
-        // Parse the token to get user type
-        const userType = getUserTypeFromToken(mockToken);
+        if (credentials.username.toLowerCase().includes('admin')) {
+          // Admin token
+          mockToken = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sInN1YiI6ImFkbWluIiwiaWF0IjoxNzQ2MzcwMDgyLCJleHAiOjE3NDYzNzA5ODJ9.j48QX0raarD0SgHFbPgKJDwb7TDAH8kucGRmY7B4Iks";
+          userType = 'admin';
+        } else {
+          // Employee/waiter token
+          mockToken = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0VNUExPWUVFIl0sInN1YiI6IndhaXRlciIsImlhdCI6MTc0NjM3MDA4MiwiZXhwIjoxNzQ2MzcwOTgyfQ.vF9CY9XpPhVnm9ni8OyYjJSDnN4JJ8RvUYIbyYZ9eX4";
+          userType = 'waiter';
+        }
+        
         console.log('Mock login - determined user type:', userType);
         
         return {
