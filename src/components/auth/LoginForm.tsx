@@ -28,9 +28,9 @@ const LoginForm: React.FC = () => {
       <Card className="auth-card">
         <CardHeader className="space-y-1 text-center">
           <div className="mx-auto mb-4">
-            <div className="restaurant-name">TapNServe</div>
+            <div className="restaurant-name text-3xl">TapNServe</div>
           </div>
-          <CardTitle className="text-xl font-semibold">Sign in to your account</CardTitle>
+          <CardTitle className="text-lg font-medium">Sign in to your account</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
