@@ -22,12 +22,41 @@ export interface AuthResponse {
   username: string;
 }
 
+// Use environment variable or default to development mode
+const IS_DEV = import.meta.env.DEV || true;
 const API_BASE_URL = 'http://localhost:8080/api';
+
+// Mock data for development purposes
+const MOCK_DATA = {
+  setupCheck: { initialSetupNeeded: false },
+  auth: {
+    admin: {
+      token: 'mock-admin-jwt-token',
+      userType: 'admin',
+      username: 'admin'
+    },
+    waiter: {
+      token: 'mock-waiter-jwt-token',
+      userType: 'waiter',
+      username: 'waiter'
+    }
+  }
+};
 
 export const api = {
   async checkInitialSetup(): Promise<SetupCheckResponse> {
+    if (IS_DEV) {
+      console.log('DEV MODE: Using mock setup check');
+      // Return mock data for development
+      return MOCK_DATA.setupCheck;
+    }
+
     try {
-      const response = await fetch(`${API_BASE_URL}/setup/check`);
+      const response = await fetch(`${API_BASE_URL}/setup/check`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to check initial setup');
       }
@@ -35,11 +64,22 @@ export const api = {
     } catch (error) {
       console.error('Error checking initial setup:', error);
       toast.error('Failed to connect to server');
-      return { initialSetupNeeded: false };
+      return MOCK_DATA.setupCheck;
     }
   },
 
   async createAdminAccount(adminData: AdminSetupData, logoFile: File | null): Promise<boolean> {
+    if (IS_DEV) {
+      console.log('DEV MODE: Mock creating admin account', adminData);
+      // Set up mock data
+      MOCK_DATA.setupCheck.initialSetupNeeded = false;
+      localStorage.setItem('auth_token', MOCK_DATA.auth.admin.token);
+      localStorage.setItem('user_type', MOCK_DATA.auth.admin.userType);
+      localStorage.setItem('username', adminData.username);
+      toast.success('Restaurant account created successfully!');
+      return true;
+    }
+
     try {
       const formData = new FormData();
       formData.append('adminData', JSON.stringify(adminData));
@@ -67,6 +107,19 @@ export const api = {
   },
 
   async login(credentials: LoginCredentials): Promise<AuthResponse | null> {
+    if (IS_DEV) {
+      console.log('DEV MODE: Mock login', credentials);
+      // Simple mock authentication for development
+      if (credentials.username === 'admin' && credentials.password === 'admin') {
+        return MOCK_DATA.auth.admin;
+      } else if (credentials.username === 'waiter' && credentials.password === 'waiter') {
+        return MOCK_DATA.auth.waiter;
+      } else {
+        toast.error('Invalid credentials. Try admin/admin or waiter/waiter');
+        return null;
+      }
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
@@ -88,4 +141,10 @@ export const api = {
       return null;
     }
   },
+  
+  // Add an authorization header utility method
+  getAuthHeader() {
+    const token = localStorage.getItem('auth_token');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  }
 };
