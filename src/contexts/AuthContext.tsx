@@ -40,12 +40,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     if (token && storedUserType) {
       console.log('Restoring session from localStorage. User type:', storedUserType);
-      
-      // Double-check user type from token to ensure consistency
-      if (storedUserType === 'admin') {
-        console.log('Admin user detected from localStorage');
-      }
-      
       setIsAuthenticated(true);
       setUserType(storedUserType);
       setUsername(storedUsername);
@@ -56,32 +50,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (credentials: LoginCredentials): Promise<boolean> => {
     setIsLoading(true);
-    try {
-      const response = await api.login(credentials);
+    const response = await api.login(credentials);
+    setIsLoading(false);
+    
+    if (response) {
+      localStorage.setItem('auth_token', response.token);
+      localStorage.setItem('user_type', response.userType);
+      localStorage.setItem('username', response.username);
       
-      if (response) {
-        localStorage.setItem('auth_token', response.token);
-        localStorage.setItem('user_type', response.userType);
-        localStorage.setItem('username', response.username);
-        
-        console.log('Login successful. Setting user type:', response.userType);
-        
-        setIsAuthenticated(true);
-        setUserType(response.userType);
-        setUsername(response.username);
-        
-        toast.success(`Welcome back, ${response.username}! Logged in as ${response.userType}`);
-        return true;
-      }
+      console.log('Setting user type from token:', response.userType);
       
-      return false;
-    } catch (error) {
-      console.error('Login error:', error);
-      toast.error('Login failed. Please check your credentials.');
-      return false;
-    } finally {
-      setIsLoading(false);
+      setIsAuthenticated(true);
+      setUserType(response.userType);
+      setUsername(response.username);
+      
+      toast.success(`Welcome back, ${response.username}! Logged in as ${response.userType}`);
+      return true;
     }
+    
+    return false;
   };
 
   const logout = () => {

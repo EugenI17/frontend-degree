@@ -32,7 +32,6 @@ function parseJwt(token: string) {
       return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
     }).join(''));
     
-    console.log('Raw JWT payload:', jsonPayload);
     return JSON.parse(jsonPayload);
   } catch (e) {
     console.error('Error parsing JWT:', e);
@@ -44,32 +43,20 @@ function parseJwt(token: string) {
 function getUserTypeFromToken(token: string): 'admin' | 'waiter' {
   try {
     const decoded = parseJwt(token);
-    console.log('Decoded JWT roles:', decoded?.roles);
+    console.log('Decoded JWT:', decoded);
     
-    // Ensure we're working with valid data
-    if (!decoded || !decoded.roles) {
-      console.warn('No roles found in token');
-      return 'waiter'; // Default fallback
-    }
-
-    // Log the actual content for debugging
-    const rolesArray = Array.isArray(decoded.roles) ? decoded.roles : [decoded.roles];
-    console.log('Roles array (after normalization):', rolesArray);
-    
-    // Direct string comparison for absolute certainty
-    for (const role of rolesArray) {
-      if (role === 'ROLE_ADMIN') {
-        console.log('Found exact ROLE_ADMIN match in token');
+    if (decoded && Array.isArray(decoded.roles)) {
+      // Check for admin role first
+      if (decoded.roles.includes('ROLE_ADMIN')) {
+        console.log('Found ROLE_ADMIN in token, setting user as admin');
         return 'admin';
+      } else if (decoded.roles.includes('ROLE_EMPLOYEE')) {
+        console.log('Found ROLE_EMPLOYEE in token, setting user as waiter');
+        return 'waiter';
       }
     }
     
-    if (rolesArray.some(role => role === 'ROLE_EMPLOYEE')) {
-      console.log('Found exact ROLE_EMPLOYEE match in token');
-      return 'waiter';
-    }
-    
-    console.warn('No recognized roles found in token, defaulting to waiter');
+    console.warn('No valid roles found in token, defaulting to waiter');
     return 'waiter';
   } catch (error) {
     console.error('Error determining user type from token:', error);
@@ -85,25 +72,14 @@ export const api = {
           'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
         }
       });
-      
-      // Check if the response is HTML (which would indicate we're not getting JSON)
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("text/html")) {
-        console.warn("Received HTML response instead of expected JSON. API may be unavailable.");
-        // Return a mock response since we know the API isn't ready yet
-        return { initialSetupNeeded: true };
-      }
-      
       if (!response.ok) {
         throw new Error('Failed to check initial setup');
       }
-      
       return await response.json();
     } catch (error) {
       console.error('Error checking initial setup:', error);
       toast.error('Failed to connect to server');
-      // Return a sensible default in case of error
-      return { initialSetupNeeded: true };
+      throw error;
     }
   },
 
@@ -151,44 +127,23 @@ export const api = {
         throw new Error('Invalid credentials');
       }
 
-      // Check if the response is HTML (which would indicate we're not getting JSON)
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("text/html")) {
-        console.warn("Received HTML response instead of expected JSON. Using mock data for development.");
-        
-        // For development purposes, create a mock successful response
-        // This allows frontend development to continue even if the backend is not fully ready
-        const mockToken = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sInN1YiI6InRlc3QiLCJpYXQiOjE3NDYzNzAwODIsImV4cCI6MTc0NjM3MDk4Mn0.j48QX0raarD0SgHFbPgKJDwb7TDAH8kucGRmY7B4Iks";
-        
-        console.log('Using mock token for development');
-        const userType = getUserTypeFromToken(mockToken);
-        
-        return {
-          token: mockToken,
-          userType: userType,
-          username: credentials.username,
-        };
-      }
-      
-      // Parse the actual JSON response
       const data = await response.json();
       console.log('Login response data:', data);
       
       // Get the token from the response
       const token = data.token;
       
-      // Test with the example token provided by user
-      console.log('-------------- TOKEN DEBUGGING --------------');
-      const exampleToken = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sInN1YiI6InRlc3QiLCJpYXQiOjE3NDYzNzAwODIsImV4cCI6MTc0NjM3MDk4Mn0.j48QX0raarD0SgHFbPgKJDwb7TDAH8kucGRmY7B4Iks";
-      console.log('Example token decode result:');
-      const exampleUserType = getUserTypeFromToken(exampleToken);
-      console.log('Example token user type:', exampleUserType);
+      // Test with the provided token if in development
+      if (import.meta.env.DEV && process.env.NODE_ENV === 'development') {
+        console.log('Testing token parsing with provided token');
+        const testToken = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sInN1YiI6InRlc3QiLCJpYXQiOjE3NDYzNzAwODIsImV4cCI6MTc0NjM3MDk4Mn0.j48QX0raarD0SgHFbPgKJDwb7TDAH8kucGRmY7B4Iks";
+        const testUserType = getUserTypeFromToken(testToken);
+        console.log('Test token user type:', testUserType);
+      }
       
-      // Now process the actual token
-      console.log('Actual token (first 20 chars):', token.substring(0, 20) + '...');
+      // Determine user type from JWT token
       const userType = getUserTypeFromToken(token);
-      console.log('Extracted user type from actual token:', userType);
-      console.log('-------------- END TOKEN DEBUGGING --------------');
+      console.log('Extracted user type from token:', userType);
       
       // Create auth response
       const authData: AuthResponse = {
