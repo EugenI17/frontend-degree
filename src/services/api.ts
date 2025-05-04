@@ -1,5 +1,4 @@
-
-import { toast } from "sonner";
+import {toast} from "sonner";
 
 export interface SetupCheckResponse {
   initialSetupNeeded: boolean;
@@ -22,7 +21,7 @@ export interface AuthResponse {
   username: string;
 }
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = 'http://localhost:8081/api';
 
 // Helper function to decode JWT token
 function parseJwt(token: string) {
@@ -59,19 +58,19 @@ function getUserTypeFromToken(token: string): 'admin' | 'employee' {
       // Handle roles whether it's an array or a string
       const roles = Array.isArray(decoded.roles) ? decoded.roles : [decoded.roles];
       console.log('Extracted roles:', roles);
-      
+
       // Check for admin role first (priority)
-      if (roles.some(role => 
-        role === 'ROLE_ADMIN' || 
-        role === 'ADMIN' || 
+      if (roles.some(role =>
+        role === 'ROLE_ADMIN' ||
+        role === 'ADMIN' ||
         role.toUpperCase() === 'ADMIN' ||
         role.toUpperCase() === 'ROLE_ADMIN')) {
         console.log('Found admin role in token');
         return 'admin';
-      } 
+      }
       // Then check for employee role
-      else if (roles.some(role => 
-        role === 'ROLE_EMPLOYEE' || 
+      else if (roles.some(role =>
+        role === 'ROLE_EMPLOYEE' ||
         role === 'EMPLOYEE' ||
         role.toUpperCase() === 'EMPLOYEE' ||
         role.toUpperCase() === 'ROLE_EMPLOYEE')) {
@@ -186,20 +185,18 @@ export const api = {
       console.log('Login response data:', data);
       
       // Get the token from the response
-      const token = data.token;
+      const token = data.accessToken;
       
       // Determine user type from JWT token
       const userType = getUserTypeFromToken(token);
       console.log('Login - determined user type from token:', userType);
       
       // Create auth response
-      const authData: AuthResponse = {
+      return {
         token: token,
         userType: userType,
         username: data.username || credentials.username,
       };
-      
-      return authData;
     } catch (error) {
       console.error('Error during login:', error);
       toast.error('Login failed. Please check your credentials.');
