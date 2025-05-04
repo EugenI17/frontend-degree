@@ -10,10 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import ProductForm from '@/components/menu/ProductForm';
 import { menuService, CreateMenuItemDto, MenuItemType, MenuItem } from '@/services/menuService';
-import { Plus } from 'lucide-react';
+import { Plus, ArrowLeft } from 'lucide-react';
 
 const MenuManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState<MenuItemType | "ALL">("ALL");
@@ -59,6 +60,15 @@ const MenuManagement: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        <div className="flex items-center mb-4">
+          <Button variant="ghost" size="sm" asChild className="mr-2">
+            <Link to="/dashboard" className="flex items-center gap-1">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Dashboard
+            </Link>
+          </Button>
+        </div>
+        
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-display font-bold text-restaurant-primary">
             Menu Management
