@@ -125,7 +125,14 @@ export const api = {
   async createAdminAccount(adminData: AdminSetupData, logoFile: File | null): Promise<boolean> {
     try {
       const formData = new FormData();
-      formData.append('adminData', JSON.stringify(adminData));
+      
+      // Create a Blob with the JSON data and specify the content type
+      const adminDataBlob = new Blob([JSON.stringify(adminData)], {
+        type: 'application/json'
+      });
+      
+      // Append the JSON blob with the correct content type
+      formData.append('adminData', adminDataBlob);
       
       if (logoFile) {
         formData.append('logo', logoFile);
@@ -206,3 +213,4 @@ export const api = {
     return token ? { 'Authorization': `Bearer ${token}` } : {};
   }
 };
+
