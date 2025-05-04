@@ -55,16 +55,15 @@ function getUserTypeFromToken(token: string): 'admin' | 'waiter' {
     
     console.log('Looking for roles in token:', decoded);
     
+    // First check for roles in the token
     if (decoded.roles) {
       // Handle roles whether it's an array or a string
       const roles = Array.isArray(decoded.roles) ? decoded.roles : [decoded.roles];
       console.log('Extracted roles:', roles);
       
-      // Improved role detection logic - check for exact role matches
-      const isAdmin = roles.some(role => 
-        role === 'ROLE_ADMIN' || 
-        role === 'ADMIN'
-      );
+      // Check for admin role first - more specific matches
+      const adminRoles = ['ROLE_ADMIN', 'ADMIN', 'admin', 'Administrator', 'ADMINISTRATOR'];
+      const isAdmin = roles.some(role => adminRoles.includes(String(role).trim()));
       
       if (isAdmin) {
         console.log('Found admin role in token');
@@ -72,25 +71,25 @@ function getUserTypeFromToken(token: string): 'admin' | 'waiter' {
       }
       
       // If not admin, check for employee/waiter roles
-      const isEmployee = roles.some(role => 
-        role === 'ROLE_EMPLOYEE' || 
-        role === 'EMPLOYEE' ||
-        role === 'WAITER' ||
-        role === 'ROLE_WAITER'
-      );
+      const waiterRoles = ['ROLE_EMPLOYEE', 'EMPLOYEE', 'WAITER', 'ROLE_WAITER', 'employee', 'waiter'];
+      const isWaiter = roles.some(role => waiterRoles.includes(String(role).trim()));
       
-      if (isEmployee) {
+      if (isWaiter) {
         console.log('Found employee/waiter role in token');
         return 'waiter';
       }
     }
     
-    // More specific default role assignment based on username
+    // If no explicit roles or none matched, check subject (username)
     if (decoded.sub) {
-      if (decoded.sub.toLowerCase().includes('admin')) {
+      const username = String(decoded.sub).toLowerCase();
+      
+      // Username-based role detection (fallback)
+      if (username.includes('admin') || username.includes('manager') || username.includes('owner')) {
+        console.log('Determining admin role based on username:', username);
         return 'admin';
-      } else if (decoded.sub.toLowerCase().includes('emp') || 
-                 decoded.sub.toLowerCase().includes('waiter')) {
+      } else if (username.includes('emp') || username.includes('waiter') || username.includes('staff')) {
+        console.log('Determining waiter role based on username:', username);
         return 'waiter';
       }
     }
@@ -181,13 +180,15 @@ export const api = {
         let userType: 'admin' | 'waiter';
         
         if (credentials.username.toLowerCase().includes('admin')) {
-          // Admin token
+          // Admin token with ROLE_ADMIN in roles array
           mockToken = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sInN1YiI6ImFkbWluIiwiaWF0IjoxNzQ2MzcwMDgyLCJleHAiOjE3NDYzNzA5ODJ9.j48QX0raarD0SgHFbPgKJDwb7TDAH8kucGRmY7B4Iks";
           userType = 'admin';
+          console.log('Mock login - Setting admin role based on username');
         } else {
-          // Employee/waiter token
+          // Employee/waiter token with ROLE_EMPLOYEE in roles array
           mockToken = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0VNUExPWUVFIl0sInN1YiI6IndhaXRlciIsImlhdCI6MTc0NjM3MDA4MiwiZXhwIjoxNzQ2MzcwOTgyfQ.vF9CY9XpPhVnm9ni8OyYjJSDnN4JJ8RvUYIbyYZ9eX4";
           userType = 'waiter';
+          console.log('Mock login - Setting waiter role based on username');
         }
         
         console.log('Mock login - determined user type:', userType);
