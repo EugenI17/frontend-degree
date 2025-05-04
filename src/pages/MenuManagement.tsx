@@ -136,7 +136,7 @@ const MenuManagement: React.FC = () => {
                           <TableCell>
                             <Badge className={getTypeColor(item.type)}>{item.type}</Badge>
                           </TableCell>
-                          <TableCell>${item.price.toFixed(2)}</TableCell>
+                          <TableCell>{item.price.toFixed(2)} Lei</TableCell>
                           <TableCell>
                             {item.ingredients.length > 0 
                               ? item.ingredients.join(", ") 

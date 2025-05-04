@@ -58,15 +58,17 @@ const ProductForm: React.FC<ProductFormProps> = ({ onSubmit, isSubmitting }) => 
       </div>
 
       <div>
-        <Label htmlFor="price">Price</Label>
+        <Label htmlFor="price">Price (Lei)</Label>
         <Input
           id="price"
           type="number"
           min="0"
           step="0.01"
-          value={product.price}
+          placeholder="Enter price"
+          value={product.price === 0 ? "" : product.price}
           onChange={(e) => handleChange("price", parseFloat(e.target.value) || 0)}
           required
+          className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
       </div>
 
