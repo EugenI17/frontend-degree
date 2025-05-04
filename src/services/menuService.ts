@@ -60,13 +60,18 @@ export const menuService = {
         body: JSON.stringify(menuItem),
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to create menu item: ${response.status}`);
+      // Only show success message if the response is ok (status in 200-299 range)
+      if (response.ok) {
+        const responseData = await response.json();
+        toast.success("Product added successfully!");
+        return responseData;
+      } else {
+        // Handle non-successful response
+        const errorText = await response.text();
+        console.error(`Failed to create menu item: ${response.status}`, errorText);
+        toast.error("Failed to add product");
+        return null;
       }
-
-      const responseData = await response.json();
-      toast.success("Product added successfully!");
-      return responseData;
     } catch (error) {
       console.error("Error creating menu item:", error);
       toast.error("Failed to add product");
