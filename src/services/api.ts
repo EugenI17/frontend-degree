@@ -99,6 +99,7 @@ export const api = {
     try {
       const response = await fetch(`${API_BASE_URL}/setup/check`, {
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
         }
       });
@@ -132,6 +133,9 @@ export const api = {
 
       const response = await fetch(`${API_BASE_URL}/setup`, {
         method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+        },
         body: formData,
       });
 
