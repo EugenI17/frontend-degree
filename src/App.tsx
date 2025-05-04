@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import MenuManagement from "./pages/MenuManagement";
+import StaffManagement from "./pages/StaffManagement";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -30,6 +31,11 @@ const App = () => (
             <Route path="/menu" element={
               <ProtectedRoute requiredRole="admin">
                 <MenuManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/staff" element={
+              <ProtectedRoute requiredRole="admin">
+                <StaffManagement />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

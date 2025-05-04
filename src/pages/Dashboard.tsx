@@ -34,13 +34,19 @@ const Dashboard: React.FC = () => {
                 </CardContent>
               </Card>
               
-              <Card>
+              <Card className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <CardTitle>Staff Management</CardTitle>
                   <CardDescription>Manage employee accounts</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p>Add new employees, update credentials or deactivate accounts.</p>
+                  <p className="mb-4">Add new employees, update credentials or deactivate accounts.</p>
+                  <Link 
+                    to="/staff" 
+                    className="text-restaurant-primary hover:underline font-medium"
+                  >
+                    Open Staff Management →
+                  </Link>
                 </CardContent>
               </Card>
               
