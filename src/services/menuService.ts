@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { api } from "./api";
 
@@ -74,4 +73,29 @@ export const menuService = {
       return null;
     }
   },
+
+  async deleteMenuItem(id: string): Promise<boolean> {
+    try {
+      const response = await api.fetchWithTokenRefresh(`${import.meta.env.VITE_API_URL || 'http://localhost:8081'}/api/menu/product/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        toast.success("Product deleted successfully");
+        return true;
+      } else {
+        const errorText = await response.text();
+        console.error("Failed to delete menu item:", response.status, errorText);
+        toast.error(`Failed to delete product (${response.status})`);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error deleting menu item:", error);
+      toast.error("Failed to delete product");
+      return false;
+    }
+  }
 };

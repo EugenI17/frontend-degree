@@ -14,11 +14,23 @@ import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import ProductForm from '@/components/menu/ProductForm';
 import { menuService, CreateMenuItemDto, MenuItemType, MenuItem } from '@/services/menuService';
-import { Plus, ArrowLeft } from 'lucide-react';
+import { Plus, ArrowLeft, Trash2 } from 'lucide-react';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 
 const MenuManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState<MenuItemType | "ALL">("ALL");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch menu items
@@ -28,11 +40,23 @@ const MenuManagement: React.FC = () => {
   });
 
   // Create menu item mutation
-  const { mutate: createMenuItem, isPending } = useMutation({
+  const { mutate: createMenuItem, isPending: isCreating } = useMutation({
     mutationFn: menuService.createMenuItem,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['menuItems'] });
       setIsDialogOpen(false);
+    },
+  });
+
+  // Delete menu item mutation
+  const { mutate: deleteMenuItem, isPending: isDeleting } = useMutation({
+    mutationFn: menuService.deleteMenuItem,
+    onSuccess: (success) => {
+      if (success) {
+        queryClient.invalidateQueries({ queryKey: ['menuItems'] });
+      }
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
     },
   });
 
@@ -44,6 +68,19 @@ const MenuManagement: React.FC = () => {
   // Handle form submission
   const handleAddProduct = (product: CreateMenuItemDto) => {
     createMenuItem(product);
+  };
+
+  // Handle delete confirmation
+  const confirmDelete = () => {
+    if (itemToDelete) {
+      deleteMenuItem(itemToDelete);
+    }
+  };
+
+  // Handle delete button click
+  const handleDeleteClick = (id: string) => {
+    setItemToDelete(id);
+    setDeleteDialogOpen(true);
   };
 
   // Get badge color based on product type
@@ -87,7 +124,7 @@ const MenuManagement: React.FC = () => {
               </DialogHeader>
               <ProductForm 
                 onSubmit={handleAddProduct} 
-                isSubmitting={isPending} 
+                isSubmitting={isCreating} 
               />
             </DialogContent>
           </Dialog>
@@ -137,6 +174,7 @@ const MenuManagement: React.FC = () => {
                         <TableHead>Type</TableHead>
                         <TableHead>Price</TableHead>
                         <TableHead>Ingredients</TableHead>
+                        <TableHead className="w-[100px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -152,6 +190,16 @@ const MenuManagement: React.FC = () => {
                               ? item.ingredients.join(", ") 
                               : <span className="text-gray-400">None</span>}
                           </TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={() => handleDeleteClick(item.id)}
+                              disabled={isDeleting && itemToDelete === item.id}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -162,6 +210,27 @@ const MenuManagement: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to delete this product?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the product.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-500 hover:bg-red-600 focus:ring-red-500"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
