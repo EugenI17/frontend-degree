@@ -32,12 +32,12 @@ const MOCK_DATA = {
   auth: {
     admin: {
       token: 'mock-admin-jwt-token',
-      userType: 'admin',
+      userType: 'admin' as const,
       username: 'admin'
     },
     waiter: {
       token: 'mock-waiter-jwt-token',
-      userType: 'waiter',
+      userType: 'waiter' as const,
       username: 'waiter'
     }
   }
