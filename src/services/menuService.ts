@@ -22,9 +22,8 @@ export interface CreateMenuItemDto {
 export const menuService = {
   async getMenuItems(): Promise<MenuItem[]> {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8081'}/api/menu`, {
+      const response = await api.fetchWithTokenRefresh(`${import.meta.env.VITE_API_URL || 'http://localhost:8081'}/api/menu`, {
         headers: {
-          ...api.getAuthHeader(),
           'Content-Type': 'application/json',
         },
       });
@@ -51,10 +50,9 @@ export const menuService = {
 
   async createMenuItem(menuItem: CreateMenuItemDto): Promise<MenuItem | null> {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8081'}/api/menu/product`, {
+      const response = await api.fetchWithTokenRefresh(`${import.meta.env.VITE_API_URL || 'http://localhost:8081'}/api/menu/product`, {
         method: 'POST',
         headers: {
-          ...api.getAuthHeader(),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(menuItem),
@@ -63,7 +61,7 @@ export const menuService = {
       // Only show success message if the response is ok (status in 200-299 range)
       if (response.ok) {
         toast.success("Product added successfully");
-        return null
+        return null;
       } else {
         const errorText = await response.text();
         console.error("Failed to create menu item:", response.status, errorText);

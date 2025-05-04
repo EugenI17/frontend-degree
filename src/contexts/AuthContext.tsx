@@ -56,6 +56,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (response) {
         localStorage.setItem('auth_token', response.token);
+        localStorage.setItem('refresh_token', response.refreshToken);
         localStorage.setItem('user_type', response.userType);
         localStorage.setItem('username', response.username);
         
@@ -77,6 +78,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('user_type');
     localStorage.removeItem('username');
     

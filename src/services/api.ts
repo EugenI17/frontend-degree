@@ -1,3 +1,4 @@
+
 import {toast} from "sonner";
 
 export interface SetupCheckResponse {
@@ -17,6 +18,7 @@ export interface LoginCredentials {
 
 export interface AuthResponse {
   token: string;
+  refreshToken: string;
   userType: 'admin' | 'employee';
   username: string;
 }
@@ -42,7 +44,22 @@ function parseJwt(token: string) {
   }
 }
 
-// Function to get user type from JWT roles - UPDATED to correctly identify admin and employee roles
+// Function to check if token is expired
+function isTokenExpired(token: string): boolean {
+  try {
+    const decoded = parseJwt(token);
+    if (!decoded || !decoded.exp) return true;
+    
+    // Convert exp to milliseconds and compare with current time
+    const currentTime = Date.now() / 1000;
+    return decoded.exp < currentTime;
+  } catch (error) {
+    console.error('Error checking token expiration:', error);
+    return true;
+  }
+}
+
+// Function to get user type from JWT roles
 function getUserTypeFromToken(token: string): 'admin' | 'employee' {
   try {
     const decoded = parseJwt(token);
@@ -94,12 +111,88 @@ function getUserTypeFromToken(token: string): 'admin' | 'employee' {
 }
 
 export const api = {
-  async checkInitialSetup(): Promise<SetupCheckResponse> {
+  async refreshToken(): Promise<boolean> {
+    const refreshToken = localStorage.getItem('refresh_token');
+    
+    if (!refreshToken) {
+      console.error('No refresh token available');
+      return false;
+    }
+    
     try {
-      const response = await fetch(`${API_BASE_URL}/setup/check`, {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to refresh token:', response.status);
+        return false;
+      }
+      
+      const data = await response.json();
+      
+      // Update tokens in localStorage
+      localStorage.setItem('auth_token', data.accessToken);
+      
+      // Only update refresh token if a new one is provided
+      if (data.refreshToken) {
+        localStorage.setItem('refresh_token', data.refreshToken);
+      }
+      
+      console.log('Token refreshed successfully');
+      return true;
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      return false;
+    }
+  },
+  
+  // Wrapper function for API requests with token refresh
+  async fetchWithTokenRefresh(url: string, options: RequestInit = {}): Promise<Response> {
+    // Try the request with the current token
+    const token = localStorage.getItem('auth_token');
+    
+    if (token && isTokenExpired(token)) {
+      console.log('Token is expired, attempting to refresh');
+      const refreshed = await this.refreshToken();
+      
+      if (!refreshed) {
+        console.error('Token refresh failed');
+        // Force logout if refresh fails
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user_type');
+        localStorage.removeItem('username');
+        
+        // Redirect to login page
+        window.location.href = '/';
+        
+        throw new Error('Session expired. Please login again.');
+      }
+    }
+    
+    // Add the current auth header (possibly with a new token)
+    const headers = {
+      ...options.headers,
+      ...this.getAuthHeader(),
+    };
+    
+    // Make the actual request
+    return fetch(url, {
+      ...options,
+      headers,
+    });
+  },
+
+  async checkInitialSetup(): Promise<SetupCheckResponse> {
+    try {
+      const response = await this.fetchWithTokenRefresh(`${API_BASE_URL}/setup/check`, {
+        headers: {
+          'Content-Type': 'application/json',
         }
       });
       
@@ -137,7 +230,7 @@ export const api = {
         formData.append('logo', logoFile);
       }
 
-      const response = await fetch(`${API_BASE_URL}/setup`, {
+      const response = await this.fetchWithTokenRefresh(`${API_BASE_URL}/setup`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -184,8 +277,9 @@ export const api = {
       const data = await response.json();
       console.log('Login response data:', data);
       
-      // Get the token from the response
+      // Get the tokens from the response
       const token = data.accessToken;
+      const refreshToken = data.refreshToken;
       
       // Determine user type from JWT token
       const userType = getUserTypeFromToken(token);
@@ -194,6 +288,7 @@ export const api = {
       // Create auth response
       return {
         token: token,
+        refreshToken: refreshToken,
         userType: userType,
         username: data.username || credentials.username,
       };
@@ -210,4 +305,3 @@ export const api = {
     return token ? { 'Authorization': `Bearer ${token}` } : {};
   }
 };
-
