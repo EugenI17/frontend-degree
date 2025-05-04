@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 const Auth: React.FC = () => {
   const [setupStatus, setSetupStatus] = useState<SetupCheckResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(false);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   
@@ -18,8 +19,12 @@ const Auth: React.FC = () => {
       try {
         const response = await api.checkInitialSetup();
         setSetupStatus(response);
+        setApiError(false);
       } catch (error) {
         console.error('Error checking setup status:', error);
+        setApiError(true);
+        // Default to login form if API is unavailable
+        setSetupStatus({ initialSetupNeeded: false });
       } finally {
         setLoading(false);
       }

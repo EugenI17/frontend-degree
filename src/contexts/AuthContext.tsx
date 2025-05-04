@@ -50,25 +50,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (credentials: LoginCredentials): Promise<boolean> => {
     setIsLoading(true);
-    const response = await api.login(credentials);
-    setIsLoading(false);
     
-    if (response) {
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('user_type', response.userType);
-      localStorage.setItem('username', response.username);
+    try {
+      const response = await api.login(credentials);
       
-      console.log('Setting user type from token:', response.userType);
+      if (response) {
+        localStorage.setItem('auth_token', response.token);
+        localStorage.setItem('user_type', response.userType);
+        localStorage.setItem('username', response.username);
+        
+        console.log('Login successful - setting user type:', response.userType);
+        
+        setIsAuthenticated(true);
+        setUserType(response.userType);
+        setUsername(response.username);
+        
+        toast.success(`Welcome back, ${response.username}! Logged in as ${response.userType}`);
+        return true;
+      }
       
-      setIsAuthenticated(true);
-      setUserType(response.userType);
-      setUsername(response.username);
-      
-      toast.success(`Welcome back, ${response.username}! Logged in as ${response.userType}`);
-      return true;
+      return false;
+    } finally {
+      setIsLoading(false);
     }
-    
-    return false;
   };
 
   const logout = () => {

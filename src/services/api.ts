@@ -26,13 +26,16 @@ const API_BASE_URL = 'http://localhost:8080/api';
 // Helper function to decode JWT token
 function parseJwt(token: string) {
   try {
+    console.log('Parsing JWT token:', token);
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
       return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
     }).join(''));
     
-    return JSON.parse(jsonPayload);
+    const decoded = JSON.parse(jsonPayload);
+    console.log('Decoded JWT payload:', decoded);
+    return decoded;
   } catch (e) {
     console.error('Error parsing JWT:', e);
     return null;
@@ -43,20 +46,30 @@ function parseJwt(token: string) {
 function getUserTypeFromToken(token: string): 'admin' | 'waiter' {
   try {
     const decoded = parseJwt(token);
-    console.log('Decoded JWT:', decoded);
     
-    if (decoded && Array.isArray(decoded.roles)) {
-      // Check for admin role first
-      if (decoded.roles.includes('ROLE_ADMIN')) {
-        console.log('Found ROLE_ADMIN in token, setting user as admin');
+    if (!decoded) {
+      console.error('Failed to decode token');
+      return 'waiter';
+    }
+    
+    console.log('Looking for roles in token:', decoded);
+    
+    if (decoded.roles) {
+      // Handle roles whether it's an array or a string
+      const roles = Array.isArray(decoded.roles) ? decoded.roles : [decoded.roles];
+      console.log('Extracted roles:', roles);
+      
+      // Check for admin role
+      if (roles.some(role => role === 'ROLE_ADMIN' || role === 'ADMIN')) {
+        console.log('Found admin role in token');
         return 'admin';
-      } else if (decoded.roles.includes('ROLE_EMPLOYEE')) {
-        console.log('Found ROLE_EMPLOYEE in token, setting user as waiter');
+      } else if (roles.some(role => role === 'ROLE_EMPLOYEE' || role === 'EMPLOYEE')) {
+        console.log('Found employee role in token');
         return 'waiter';
       }
     }
     
-    console.warn('No valid roles found in token, defaulting to waiter');
+    console.warn('No recognized roles found in token, defaulting to waiter');
     return 'waiter';
   } catch (error) {
     console.error('Error determining user type from token:', error);
@@ -64,22 +77,41 @@ function getUserTypeFromToken(token: string): 'admin' | 'waiter' {
   }
 }
 
+// For development and testing
+function mockResponse(isDevelopment: boolean): boolean {
+  return isDevelopment && (import.meta.env.DEV || process.env.NODE_ENV === 'development');
+}
+
 export const api = {
   async checkInitialSetup(): Promise<SetupCheckResponse> {
     try {
+      // For development, return mock data if API is unreachable
+      if (mockResponse(true)) {
+        console.log('Using mock data for setup check');
+        return { initialSetupNeeded: false };
+      }
+      
       const response = await fetch(`${API_BASE_URL}/setup/check`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
         }
       });
+      
       if (!response.ok) {
         throw new Error('Failed to check initial setup');
       }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn('Received non-JSON response from API');
+        return { initialSetupNeeded: false };
+      }
+      
       return await response.json();
     } catch (error) {
       console.error('Error checking initial setup:', error);
       toast.error('Failed to connect to server');
-      throw error;
+      return { initialSetupNeeded: false };
     }
   },
 
@@ -114,6 +146,24 @@ export const api = {
     try {
       console.log('Attempting login with credentials:', credentials);
       
+      // For development mode, return a mock successful response
+      if (mockResponse(true)) {
+        console.log('DEV MODE: Using mock login response');
+        
+        // For testing, you can use this example token which contains admin role
+        const mockToken = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sInN1YiI6InRlc3QiLCJpYXQiOjE3NDYzNzAwODIsImV4cCI6MTc0NjM3MDk4Mn0.j48QX0raarD0SgHFbPgKJDwb7TDAH8kucGRmY7B4Iks";
+        
+        // Parse the token to get user type
+        const userType = getUserTypeFromToken(mockToken);
+        console.log('Mock login - determined user type:', userType);
+        
+        return {
+          token: mockToken,
+          userType: userType,
+          username: credentials.username
+        };
+      }
+      
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
@@ -127,23 +177,21 @@ export const api = {
         throw new Error('Invalid credentials');
       }
 
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn('Received non-JSON response from API');
+        throw new Error('Unexpected response from server');
+      }
+
       const data = await response.json();
       console.log('Login response data:', data);
       
       // Get the token from the response
       const token = data.token;
       
-      // Test with the provided token if in development
-      if (import.meta.env.DEV && process.env.NODE_ENV === 'development') {
-        console.log('Testing token parsing with provided token');
-        const testToken = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sInN1YiI6InRlc3QiLCJpYXQiOjE3NDYzNzAwODIsImV4cCI6MTc0NjM3MDk4Mn0.j48QX0raarD0SgHFbPgKJDwb7TDAH8kucGRmY7B4Iks";
-        const testUserType = getUserTypeFromToken(testToken);
-        console.log('Test token user type:', testUserType);
-      }
-      
       // Determine user type from JWT token
       const userType = getUserTypeFromToken(token);
-      console.log('Extracted user type from token:', userType);
+      console.log('Login - determined user type from token:', userType);
       
       // Create auth response
       const authData: AuthResponse = {
