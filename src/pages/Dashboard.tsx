@@ -70,16 +70,6 @@ const Dashboard: React.FC = () => {
                   <p>View and update status of orders currently in progress.</p>
                 </CardContent>
               </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Generate Bill</CardTitle>
-                  <CardDescription>Finalize customer bills</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p>Create bills for completed orders and process payments.</p>
-                </CardContent>
-              </Card>
             </>
           )}
         </div>
