@@ -7,6 +7,16 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -21,6 +31,8 @@ const StaffManagement: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [employeeToDelete, setEmployeeToDelete] = useState<number | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Fetch users
@@ -50,9 +62,11 @@ const StaffManagement: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('Employee deleted successfully!');
+      setIsDeleteDialogOpen(false);
     },
     onError: (error) => {
       toast.error(`Failed to delete employee: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setIsDeleteDialogOpen(false);
     }
   });
 
@@ -67,10 +81,16 @@ const StaffManagement: React.FC = () => {
     createUser({ username, password });
   };
 
-  // Handle user deletion
-  const handleDeleteEmployee = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this employee?')) {
-      deleteUser(id);
+  // Open delete confirmation dialog
+  const openDeleteDialog = (id: number) => {
+    setEmployeeToDelete(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Handle user deletion confirmation
+  const confirmDelete = () => {
+    if (employeeToDelete !== null) {
+      deleteUser(employeeToDelete);
     }
   };
 
@@ -184,7 +204,7 @@ const StaffManagement: React.FC = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDeleteEmployee(user.id)}
+                          onClick={() => openDeleteDialog(user.id)}
                           disabled={isDeleting || user.roles.some(role => role.includes('ADMIN'))}
                         >
                           <Trash2 className="h-4 w-4 text-red-500" />
@@ -198,8 +218,30 @@ const StaffManagement: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to delete this employee?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the employee account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-500 hover:bg-red-600 focus:ring-red-500"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
 
 export default StaffManagement;
+
