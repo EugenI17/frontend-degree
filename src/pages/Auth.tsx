@@ -6,11 +6,11 @@ import LoginForm from '@/components/auth/LoginForm';
 import SetupForm from '@/components/auth/SetupForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 
 const Auth: React.FC = () => {
   const [setupStatus, setSetupStatus] = useState<SetupCheckResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [apiError, setApiError] = useState(false);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   
@@ -19,10 +19,9 @@ const Auth: React.FC = () => {
       try {
         const response = await api.checkInitialSetup();
         setSetupStatus(response);
-        setApiError(false);
       } catch (error) {
         console.error('Error checking setup status:', error);
-        setApiError(true);
+        toast.error('Could not connect to server. Please check your connection and try again.');
         // Default to login form if API is unavailable
         setSetupStatus({ initialSetupNeeded: false });
       } finally {

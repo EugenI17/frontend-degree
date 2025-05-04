@@ -94,20 +94,9 @@ function getUserTypeFromToken(token: string): 'admin' | 'employee' {
   }
 }
 
-// For development and testing
-function mockResponse(isDevelopment: boolean): boolean {
-  return isDevelopment && (import.meta.env.DEV || process.env.NODE_ENV === 'development');
-}
-
 export const api = {
   async checkInitialSetup(): Promise<SetupCheckResponse> {
     try {
-      // For development, return mock data if API is unreachable
-      if (mockResponse(true)) {
-        console.log('Using mock data for setup check');
-        return { initialSetupNeeded: false };
-      }
-      
       const response = await fetch(`${API_BASE_URL}/setup/check`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
@@ -162,33 +151,6 @@ export const api = {
   async login(credentials: LoginCredentials): Promise<AuthResponse | null> {
     try {
       console.log('Attempting login with credentials:', credentials);
-      
-      // For development mode, return a mock successful response
-      if (mockResponse(true)) {
-        console.log('DEV MODE: Using mock login response');
-        
-        // Choose token based on username for testing purposes
-        let mockToken;
-        let userType: 'admin' | 'employee';
-        
-        if (credentials.username.toLowerCase().includes('admin')) {
-          // Mock token with admin role
-          mockToken = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sInN1YiI6InRlc3QiLCJpYXQiOjE3NDYzNzAwODIsImV4cCI6MTc0NjM3MDk4Mn0.j48QX0raarD0SgHFbPgKJDwb7TDAH8kucGRmY7B4Iks";
-          userType = 'admin';
-        } else {
-          // Mock token with employee role
-          mockToken = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0VNUExPWUVFIl0sInN1YiI6InRlc3QiLCJpYXQiOjE3NDYzNzAwODIsImV4cCI6MTc0NjM3MDk4Mn0.j48QX0raarD0SgHFbPgKJDwb7TDAH8kucGRmY7B4Iks";
-          userType = 'employee';
-        }
-        
-        console.log(`Mock login - assigned user type: ${userType} for username: ${credentials.username}`);
-        
-        return {
-          token: mockToken,
-          userType: userType,
-          username: credentials.username
-        };
-      }
       
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
