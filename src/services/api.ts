@@ -43,7 +43,7 @@ function parseJwt(token: string) {
   }
 }
 
-// Function to get user type from JWT roles
+// Function to get user type from JWT roles - UPDATED to correctly identify admin and employee roles
 function getUserTypeFromToken(token: string): 'admin' | 'employee' {
   try {
     const decoded = parseJwt(token);
@@ -60,14 +60,30 @@ function getUserTypeFromToken(token: string): 'admin' | 'employee' {
       const roles = Array.isArray(decoded.roles) ? decoded.roles : [decoded.roles];
       console.log('Extracted roles:', roles);
       
-      // Check for admin role
-      if (roles.some(role => role === 'ROLE_ADMIN' || role === 'ADMIN')) {
+      // Check for admin role first (priority)
+      if (roles.some(role => 
+        role === 'ROLE_ADMIN' || 
+        role === 'ADMIN' || 
+        role.toUpperCase() === 'ADMIN' ||
+        role.toUpperCase() === 'ROLE_ADMIN')) {
         console.log('Found admin role in token');
         return 'admin';
-      } else if (roles.some(role => role === 'ROLE_EMPLOYEE' || role === 'EMPLOYEE')) {
+      } 
+      // Then check for employee role
+      else if (roles.some(role => 
+        role === 'ROLE_EMPLOYEE' || 
+        role === 'EMPLOYEE' ||
+        role.toUpperCase() === 'EMPLOYEE' ||
+        role.toUpperCase() === 'ROLE_EMPLOYEE')) {
         console.log('Found employee role in token');
         return 'employee';
       }
+    }
+    
+    // If no specific roles found, check username for fallback logic
+    if (decoded.sub && decoded.sub.toLowerCase().includes('admin')) {
+      console.log('No specific role found, but username contains "admin"');
+      return 'admin';
     }
     
     console.warn('No recognized roles found in token, defaulting to employee');
@@ -151,20 +167,24 @@ export const api = {
       if (mockResponse(true)) {
         console.log('DEV MODE: Using mock login response');
         
-        // Mock token for admin role testing
-        const mockAdminToken = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sInN1YiI6InRlc3QiLCJpYXQiOjE3NDYzNzAwODIsImV4cCI6MTc0NjM3MDk4Mn0.j48QX0raarD0SgHFbPgKJDwb7TDAH8kucGRmY7B4Iks";
-        // Mock token for employee role testing
-        const mockEmployeeToken = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0VNUExPWUVFIl0sInN1YiI6InRlc3QiLCJpYXQiOjE3NDYzNzAwODIsImV4cCI6MTc0NjM3MDk4Mn0.j48QX0raarD0SgHFbPgKJDwb7TDAH8kucGRmY7B4Iks";
-        
         // Choose token based on username for testing purposes
-        const token = credentials.username.toLowerCase().includes('admin') ? mockAdminToken : mockEmployeeToken;
+        let mockToken;
+        let userType: 'admin' | 'employee';
         
-        // Parse the token to get user type
-        const userType = getUserTypeFromToken(token);
-        console.log('Mock login - determined user type:', userType);
+        if (credentials.username.toLowerCase().includes('admin')) {
+          // Mock token with admin role
+          mockToken = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sInN1YiI6InRlc3QiLCJpYXQiOjE3NDYzNzAwODIsImV4cCI6MTc0NjM3MDk4Mn0.j48QX0raarD0SgHFbPgKJDwb7TDAH8kucGRmY7B4Iks";
+          userType = 'admin';
+        } else {
+          // Mock token with employee role
+          mockToken = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0VNUExPWUVFIl0sInN1YiI6InRlc3QiLCJpYXQiOjE3NDYzNzAwODIsImV4cCI6MTc0NjM3MDk4Mn0.j48QX0raarD0SgHFbPgKJDwb7TDAH8kucGRmY7B4Iks";
+          userType = 'employee';
+        }
+        
+        console.log(`Mock login - assigned user type: ${userType} for username: ${credentials.username}`);
         
         return {
-          token: token,
+          token: mockToken,
           userType: userType,
           username: credentials.username
         };
