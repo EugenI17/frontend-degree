@@ -40,6 +40,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     if (token && storedUserType) {
       console.log('Restoring session from localStorage. User type:', storedUserType);
+      
+      // Double-check user type from token to ensure consistency
+      if (storedUserType === 'admin') {
+        console.log('Admin user detected from localStorage');
+      }
+      
       setIsAuthenticated(true);
       setUserType(storedUserType);
       setUsername(storedUsername);
@@ -58,7 +64,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('user_type', response.userType);
       localStorage.setItem('username', response.username);
       
-      console.log('Setting user type from token:', response.userType);
+      console.log('Login successful. Setting user type:', response.userType);
       
       setIsAuthenticated(true);
       setUserType(response.userType);
