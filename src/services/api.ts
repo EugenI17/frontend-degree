@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 
 export interface SetupCheckResponse {
@@ -27,27 +26,42 @@ const API_BASE_URL = 'http://localhost:8080/api';
 // Helper function to decode JWT token
 function parseJwt(token: string) {
   try {
-    return JSON.parse(atob(token.split('.')[1]));
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    
+    return JSON.parse(jsonPayload);
   } catch (e) {
+    console.error('Error parsing JWT:', e);
     return null;
   }
 }
 
 // Function to get user type from JWT roles
 function getUserTypeFromToken(token: string): 'admin' | 'waiter' {
-  const decoded = parseJwt(token);
-  console.log('Decoded JWT:', decoded);
-  
-  if (decoded && decoded.roles) {
-    if (decoded.roles.includes('ROLE_ADMIN')) {
-      return 'admin';
-    } else if (decoded.roles.includes('ROLE_EMPLOYEE')) {
-      return 'waiter';
+  try {
+    const decoded = parseJwt(token);
+    console.log('Decoded JWT:', decoded);
+    
+    if (decoded && Array.isArray(decoded.roles)) {
+      // Check for admin role first
+      if (decoded.roles.includes('ROLE_ADMIN')) {
+        console.log('Found ROLE_ADMIN in token, setting user as admin');
+        return 'admin';
+      } else if (decoded.roles.includes('ROLE_EMPLOYEE')) {
+        console.log('Found ROLE_EMPLOYEE in token, setting user as waiter');
+        return 'waiter';
+      }
     }
+    
+    console.warn('No valid roles found in token, defaulting to waiter');
+    return 'waiter';
+  } catch (error) {
+    console.error('Error determining user type from token:', error);
+    return 'waiter';
   }
-  
-  // Default to waiter if we can't determine role
-  return 'waiter';
 }
 
 export const api = {
@@ -118,6 +132,14 @@ export const api = {
       
       // Get the token from the response
       const token = data.token;
+      
+      // Test with the provided token if in development
+      if (import.meta.env.DEV && process.env.NODE_ENV === 'development') {
+        console.log('Testing token parsing with provided token');
+        const testToken = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sInN1YiI6InRlc3QiLCJpYXQiOjE3NDYzNzAwODIsImV4cCI6MTc0NjM3MDk4Mn0.j48QX0raarD0SgHFbPgKJDwb7TDAH8kucGRmY7B4Iks";
+        const testUserType = getUserTypeFromToken(testToken);
+        console.log('Test token user type:', testUserType);
+      }
       
       // Determine user type from JWT token
       const userType = getUserTypeFromToken(token);

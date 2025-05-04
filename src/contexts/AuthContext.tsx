@@ -39,6 +39,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const storedUsername = localStorage.getItem('username');
     
     if (token && storedUserType) {
+      console.log('Restoring session from localStorage. User type:', storedUserType);
       setIsAuthenticated(true);
       setUserType(storedUserType);
       setUsername(storedUsername);
