@@ -64,8 +64,9 @@ export const menuService = {
         throw new Error(`Failed to create menu item: ${response.status}`);
       }
 
+      const responseData = await response.json();
       toast.success("Product added successfully!");
-      return await response.json();
+      return responseData;
     } catch (error) {
       console.error("Error creating menu item:", error);
       toast.error("Failed to add product");
