@@ -28,7 +28,7 @@ const LoginForm: React.FC = () => {
       <Card className="auth-card">
         <CardHeader className="space-y-1 text-center">
           <div className="mx-auto mb-4">
-            <div className="restaurant-name">Restaurant Manager</div>
+            <div className="restaurant-name">TapNServe</div>
           </div>
           <CardTitle className="text-xl font-semibold">Sign in to your account</CardTitle>
         </CardHeader>
