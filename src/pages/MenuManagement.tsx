@@ -35,10 +35,10 @@ const MenuManagement: React.FC = () => {
     },
   });
 
-  // Filter menu items by type
-  const filteredMenuItems = activeTab === "ALL" 
-    ? menuItems 
-    : menuItems.filter(item => item.type === activeTab);
+  // Ensure menuItems is always an array and then filter
+  const filteredMenuItems = Array.isArray(menuItems) 
+    ? (activeTab === "ALL" ? menuItems : menuItems.filter(item => item.type === activeTab))
+    : [];
 
   // Handle form submission
   const handleAddProduct = (product: CreateMenuItemDto) => {

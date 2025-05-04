@@ -33,7 +33,15 @@ export const menuService = {
         throw new Error(`Failed to fetch menu items: ${response.status}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      
+      // Ensure we always return an array
+      if (Array.isArray(data)) {
+        return data;
+      } else {
+        console.error("API did not return an array for menu items", data);
+        return [];
+      }
     } catch (error) {
       console.error("Error fetching menu items:", error);
       toast.error("Failed to load menu items");
