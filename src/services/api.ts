@@ -72,6 +72,8 @@ export const api = {
 
   async login(credentials: LoginCredentials): Promise<AuthResponse | null> {
     try {
+      console.log('Attempting login with credentials:', credentials);
+      
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
@@ -81,11 +83,21 @@ export const api = {
       });
 
       if (!response.ok) {
+        console.error('Login failed with status:', response.status);
         throw new Error('Invalid credentials');
       }
 
       const data = await response.json();
-      return data;
+      console.log('Login response data:', data);
+      
+      // Ensure we have the correct user type from the response
+      const authData: AuthResponse = {
+        token: data.token,
+        userType: data.userType || 'waiter', // Default to 'waiter' if not specified
+        username: data.username || credentials.username,
+      };
+      
+      return authData;
     } catch (error) {
       console.error('Error during login:', error);
       toast.error('Login failed. Please check your credentials.');

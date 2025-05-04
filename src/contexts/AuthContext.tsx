@@ -57,11 +57,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('user_type', response.userType);
       localStorage.setItem('username', response.username);
       
+      console.log('Setting user type:', response.userType);
+      
       setIsAuthenticated(true);
       setUserType(response.userType);
       setUsername(response.username);
       
-      toast.success(`Welcome back, ${response.username}!`);
+      toast.success(`Welcome back, ${response.username}! Logged in as ${response.userType}`);
       return true;
     }
     
