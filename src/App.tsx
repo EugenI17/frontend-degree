@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import MenuManagement from "./pages/MenuManagement";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -26,7 +27,11 @@ const App = () => (
                 <Dashboard />
               </ProtectedRoute>
             } />
-            {/* Admin-only routes can be added here with requiredRole="admin" */}
+            <Route path="/menu" element={
+              <ProtectedRoute requiredRole="admin">
+                <MenuManagement />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

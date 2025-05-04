@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
+import { Link } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
   const { userType } = useAuth();
@@ -17,13 +18,19 @@ const Dashboard: React.FC = () => {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {userType === 'admin' && (
             <>
-              <Card>
+              <Card className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <CardTitle>Manage Menu</CardTitle>
                   <CardDescription>Add, edit or remove menu items</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p>Organize your TapNServe offerings by categories and manage prices.</p>
+                  <p className="mb-4">Organize your TapNServe offerings by categories and manage prices.</p>
+                  <Link 
+                    to="/menu" 
+                    className="text-restaurant-primary hover:underline font-medium"
+                  >
+                    Open Menu Management →
+                  </Link>
                 </CardContent>
               </Card>
               
