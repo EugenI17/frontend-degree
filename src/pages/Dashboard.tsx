@@ -11,7 +11,7 @@ const Dashboard: React.FC = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <h1 className="text-3xl font-display font-bold text-restaurant-primary">
-          {userType === 'admin' ? 'Admin Dashboard' : 'Waiter Dashboard'}
+          {userType === 'admin' ? 'Admin Dashboard' : 'Employee Dashboard'}
         </h1>
         
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -30,10 +30,10 @@ const Dashboard: React.FC = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Staff Management</CardTitle>
-                  <CardDescription>Manage waiter accounts</CardDescription>
+                  <CardDescription>Manage employee accounts</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p>Add new waiters, update credentials or deactivate accounts.</p>
+                  <p>Add new employees, update credentials or deactivate accounts.</p>
                 </CardContent>
               </Card>
               
@@ -49,7 +49,7 @@ const Dashboard: React.FC = () => {
             </>
           )}
           
-          {userType === 'waiter' && (
+          {userType === 'employee' && (
             <>
               <Card>
                 <CardHeader>

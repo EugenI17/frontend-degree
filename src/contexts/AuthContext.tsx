@@ -5,7 +5,7 @@ import { api, LoginCredentials } from '../services/api';
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  userType: 'admin' | 'waiter' | null;
+  userType: 'admin' | 'employee' | null;
   username: string | null;
   login: (credentials: LoginCredentials) => Promise<boolean>;
   logout: () => void;
@@ -28,14 +28,14 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [userType, setUserType] = useState<'admin' | 'waiter' | null>(null);
+  const [userType, setUserType] = useState<'admin' | 'employee' | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     // Check for existing auth token on mount
     const token = localStorage.getItem('auth_token');
-    const storedUserType = localStorage.getItem('user_type') as 'admin' | 'waiter' | null;
+    const storedUserType = localStorage.getItem('user_type') as 'admin' | 'employee' | null;
     const storedUsername = localStorage.getItem('username');
     
     if (token && storedUserType) {
