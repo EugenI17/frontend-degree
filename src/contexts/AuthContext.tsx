@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { toast } from "sonner";
-import { api, LoginCredentials, AuthResponse } from '../services/api';
+import { api, LoginCredentials } from '../services/api';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -57,7 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('user_type', response.userType);
       localStorage.setItem('username', response.username);
       
-      console.log('Setting user type:', response.userType);
+      console.log('Setting user type from token:', response.userType);
       
       setIsAuthenticated(true);
       setUserType(response.userType);

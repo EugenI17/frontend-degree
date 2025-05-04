@@ -24,6 +24,32 @@ export interface AuthResponse {
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
+// Helper function to decode JWT token
+function parseJwt(token: string) {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch (e) {
+    return null;
+  }
+}
+
+// Function to get user type from JWT roles
+function getUserTypeFromToken(token: string): 'admin' | 'waiter' {
+  const decoded = parseJwt(token);
+  console.log('Decoded JWT:', decoded);
+  
+  if (decoded && decoded.roles) {
+    if (decoded.roles.includes('ROLE_ADMIN')) {
+      return 'admin';
+    } else if (decoded.roles.includes('ROLE_EMPLOYEE')) {
+      return 'waiter';
+    }
+  }
+  
+  // Default to waiter if we can't determine role
+  return 'waiter';
+}
+
 export const api = {
   async checkInitialSetup(): Promise<SetupCheckResponse> {
     try {
@@ -90,10 +116,17 @@ export const api = {
       const data = await response.json();
       console.log('Login response data:', data);
       
-      // Ensure we have the correct user type from the response
+      // Get the token from the response
+      const token = data.token;
+      
+      // Determine user type from JWT token
+      const userType = getUserTypeFromToken(token);
+      console.log('Extracted user type from token:', userType);
+      
+      // Create auth response
       const authData: AuthResponse = {
-        token: data.token,
-        userType: data.userType || 'waiter', // Default to 'waiter' if not specified
+        token: token,
+        userType: userType,
         username: data.username || credentials.username,
       };
       
