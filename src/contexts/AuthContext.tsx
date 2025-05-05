@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { toast } from "sonner";
 import { api, LoginCredentials } from '../services/api';
@@ -46,6 +45,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
     
     setIsLoading(false);
+
+    // Set up a token refresh interval to keep the session alive
+    // Refresh token every 50 minutes to ensure the session stays active for the 1 hour period
+    const refreshInterval = setInterval(() => {
+      const currentToken = localStorage.getItem('auth_token');
+      if (currentToken) {
+        console.log('Refreshing auth token to keep session alive');
+        api.refreshToken().catch(error => {
+          console.error('Failed to refresh token:', error);
+        });
+      }
+    }, 50 * 60 * 1000); // 50 minutes in milliseconds
+
+    return () => {
+      clearInterval(refreshInterval);
+    };
   }, []);
 
   const login = async (credentials: LoginCredentials): Promise<boolean> => {

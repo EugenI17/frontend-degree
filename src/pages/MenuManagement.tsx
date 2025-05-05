@@ -13,8 +13,9 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import ProductForm from '@/components/menu/ProductForm';
+import EditProductForm from '@/components/menu/EditProductForm';
 import { menuService, CreateMenuItemDto, MenuItemType, MenuItem } from '@/services/menuService';
-import { Plus, ArrowLeft, Trash2 } from 'lucide-react';
+import { Plus, ArrowLeft, Trash2, Pencil } from 'lucide-react';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +32,8 @@ const MenuManagement: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [itemToEdit, setItemToEdit] = useState<MenuItem | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch menu items
@@ -45,6 +48,18 @@ const MenuManagement: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['menuItems'] });
       setIsDialogOpen(false);
+    },
+  });
+
+  // Update menu item mutation
+  const { mutate: updateMenuItem, isPending: isUpdating } = useMutation({
+    mutationFn: menuService.updateMenuItem,
+    onSuccess: (success) => {
+      if (success) {
+        queryClient.invalidateQueries({ queryKey: ['menuItems'] });
+        setEditDialogOpen(false);
+        setItemToEdit(null);
+      }
     },
   });
 
@@ -68,6 +83,17 @@ const MenuManagement: React.FC = () => {
   // Handle form submission
   const handleAddProduct = (product: CreateMenuItemDto) => {
     createMenuItem(product);
+  };
+
+  // Handle edit form submission
+  const handleUpdateProduct = (product: MenuItem) => {
+    updateMenuItem(product);
+  };
+
+  // Handle edit button click
+  const handleEditClick = (product: MenuItem) => {
+    setItemToEdit(product);
+    setEditDialogOpen(true);
   };
 
   // Handle delete confirmation
@@ -174,7 +200,7 @@ const MenuManagement: React.FC = () => {
                         <TableHead>Type</TableHead>
                         <TableHead>Price</TableHead>
                         <TableHead>Ingredients</TableHead>
-                        <TableHead className="w-[100px]">Actions</TableHead>
+                        <TableHead className="w-[150px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -191,14 +217,25 @@ const MenuManagement: React.FC = () => {
                               : <span className="text-gray-400">None</span>}
                           </TableCell>
                           <TableCell>
-                            <Button 
-                              variant="destructive" 
-                              size="sm"
-                              onClick={() => handleDeleteClick(item.id)}
-                              disabled={isDeleting && itemToDelete === item.id}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditClick(item)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => handleDeleteClick(item.id)}
+                                disabled={isDeleting && itemToDelete === item.id}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -210,6 +247,23 @@ const MenuManagement: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Product Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Product</DialogTitle>
+          </DialogHeader>
+          {itemToEdit && (
+            <EditProductForm 
+              product={itemToEdit}
+              onSubmit={handleUpdateProduct}
+              isSubmitting={isUpdating}
+              onCancel={() => setEditDialogOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

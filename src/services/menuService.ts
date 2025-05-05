@@ -97,5 +97,31 @@ export const menuService = {
       toast.error("Failed to delete product");
       return false;
     }
+  },
+
+  async updateMenuItem(menuItem: MenuItem): Promise<boolean> {
+    try {
+      const response = await api.fetchWithTokenRefresh(`${import.meta.env.VITE_API_URL || 'http://localhost:8081'}/api/menu/product`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(menuItem),
+      });
+
+      if (response.ok) {
+        toast.success("Product updated successfully");
+        return true;
+      } else {
+        const errorText = await response.text();
+        console.error("Failed to update menu item:", response.status, errorText);
+        toast.error(`Failed to update product (${response.status})`);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error updating menu item:", error);
+      toast.error("Failed to update product");
+      return false;
+    }
   }
 };
