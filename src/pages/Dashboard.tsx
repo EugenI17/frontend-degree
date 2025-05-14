@@ -64,13 +64,19 @@ const Dashboard: React.FC = () => {
           
           {userType === 'employee' && (
             <>
-              <Card>
+              <Card className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <CardTitle>New Order</CardTitle>
                   <CardDescription>Create customer orders</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p>Create and send new orders to the kitchen or bar.</p>
+                  <p className="mb-4">Create and send new orders to the kitchen or bar.</p>
+                  <Link 
+                    to="/new-order" 
+                    className="text-restaurant-primary hover:underline font-medium"
+                  >
+                    Create New Order →
+                  </Link>
                 </CardContent>
               </Card>
               
