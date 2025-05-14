@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import MenuManagement from "./pages/MenuManagement";
 import StaffManagement from "./pages/StaffManagement";
+import NewOrder from "./pages/NewOrder";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -36,6 +37,11 @@ const App = () => (
             <Route path="/staff" element={
               <ProtectedRoute requiredRole="admin">
                 <StaffManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/new-order" element={
+              <ProtectedRoute>
+                <NewOrder />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

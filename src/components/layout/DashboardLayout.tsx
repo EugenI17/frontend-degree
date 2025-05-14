@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,29 @@ import { LogOut, Menu, User } from "lucide-react";
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
+
+const navigationItems = [
+  {
+    name: "Dashboard",
+    href: "/dashboard",
+    requiresAdmin: false,
+  },
+  {
+    name: "New Order",
+    href: "/new-order",
+    requiresAdmin: false,
+  },
+  {
+    name: "Menu Management",
+    href: "/menu",
+    requiresAdmin: true,
+  },
+  {
+    name: "Staff Management",
+    href: "/staff",
+    requiresAdmin: true,
+  },
+];
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const { logout, username, userType } = useAuth();
