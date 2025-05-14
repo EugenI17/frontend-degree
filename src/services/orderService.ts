@@ -19,7 +19,7 @@ export const orderService = {
   async createOrder(order: Order): Promise<boolean> {
     try {
       const response = await api.fetchWithTokenRefresh(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8081'}/api/orders`, 
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/order`, 
         {
           method: 'POST',
           headers: {
