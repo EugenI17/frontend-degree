@@ -136,6 +136,25 @@ const NewOrder = () => {
       handleOpenTableNumberDialog(); 
       return;
     }
+
+    const selectedProduct = menuItems?.find(item => item.id === productId);
+
+    if (selectedProduct && selectedProduct.type === "DRINK") {
+      const newCartItem: CartItem = {
+        productId: productId,
+        product: {
+          id: productId,
+          name: productName,
+          price: productPrice
+        }
+        // No specification, extra, or fara for drinks by default
+      };
+      setCart(prevCart => [...prevCart, newCartItem]);
+      toast.success(`${productName} added to order`);
+      return; // Skip opening the dialog for drinks
+    }
+    
+    // For non-drinks or if product info isn't fully loaded yet (though less likely with button guards)
     setCurrentProductId(productId);
     setSpecification("");
     setExtra([]);  
