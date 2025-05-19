@@ -8,7 +8,7 @@ import { orderService, OrderItem } from "@/services/orderService";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, PlusCircle, Trash2, XCircle } from "lucide-react";
+import { Loader2, PlusCircle, Trash2, XCircle, ArrowLeft } from "lucide-react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
@@ -143,7 +143,13 @@ const NewOrder = () => {
     <DashboardLayout>
       <div className="container mx-auto py-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">New Order</h1>
+          <div className="flex items-center gap-4">
+            <Button onClick={() => navigate('/dashboard')} variant="outline" size="icon">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="sr-only">Back to Main Menu</span>
+            </Button>
+            <h1 className="text-2xl font-bold">New Order</h1>
+          </div>
           <Button onClick={handleOpenTableNumberDialog} variant="outline">
             {tableNumber ? `Table: ${tableNumber} (Change)` : "Select Table"} 
           </Button>
