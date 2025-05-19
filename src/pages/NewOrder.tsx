@@ -87,7 +87,7 @@ const NewOrder = () => {
         id: currentProductId,
         name: selectedProduct.name,
         price: selectedProduct.price,
-        ingredients: selectedProduct.ingredients // Store ingredients if needed for display, though not strictly necessary for order creation
+        ingredients: selectedProduct.ingredients 
       }
     };
     
@@ -303,11 +303,12 @@ const NewOrder = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">None</SelectItem>
-                    {currentProductDetails?.ingredients?.map((ingredient) => (
-                      <SelectItem key={`extra-${ingredient}`} value={ingredient}>
-                        {ingredient}
-                      </SelectItem>
-                    ))}
+                    {currentProductDetails?.ingredients && Array.isArray(currentProductDetails.ingredients) &&
+                      currentProductDetails.ingredients.map((ingredient) => (
+                        <SelectItem key={`extra-${ingredient}`} value={ingredient}>
+                          {ingredient}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -319,11 +320,12 @@ const NewOrder = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">None</SelectItem>
-                    {currentProductDetails?.ingredients?.map((ingredient) => (
-                      <SelectItem key={`fara-${ingredient}`} value={ingredient}>
-                        {ingredient}
-                      </SelectItem>
-                    ))}
+                    {currentProductDetails?.ingredients && Array.isArray(currentProductDetails.ingredients) &&
+                      currentProductDetails.ingredients.map((ingredient) => (
+                        <SelectItem key={`fara-${ingredient}`} value={ingredient}>
+                          {ingredient}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
