@@ -150,9 +150,7 @@ const NewOrder = () => {
             </Button>
             <h1 className="text-2xl font-bold">New Order</h1>
           </div>
-          <Button onClick={handleOpenTableNumberDialog} variant="outline">
-            {tableNumber ? `Table: ${tableNumber} (Change)` : "Select Table"} 
-          </Button>
+          {/* Removed the top-right table number button */}
         </div>
         
         <div className="flex flex-col md:flex-row gap-6">
@@ -161,11 +159,14 @@ const NewOrder = () => {
             <CardContent className="pt-6">
               {!tableNumber.trim() && (
                 <div className="text-center py-10 text-muted-foreground">
-                  <p className="mb-2">Please select a table number to start adding products.</p>
+                  <p className="mb-4">Please select a table number to start adding products.</p>
+                  <Button onClick={handleOpenTableNumberDialog}>
+                    Select Table
+                  </Button>
                 </div>
               )}
               
-              {isLoading && !menuItems && (
+              {isLoading && !menuItems && tableNumber.trim() && (
                 <div className="flex justify-center items-center h-40">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
@@ -202,12 +203,24 @@ const NewOrder = () => {
           {/* Right side - Cart */}
           <Card className="w-full md:w-1/3">
             <CardContent className="pt-6">
-              <h2 className="text-xl font-bold mb-4">Order Summary</h2>
-              <p className="text-sm mb-4">Table: {tableNumber || "Not specified"}</p>
+              <div className="flex justify-between items-center mb-4">
+                 <h2 className="text-xl font-bold">Order Summary</h2>
+                 {tableNumber && (
+                    <Button onClick={handleOpenTableNumberDialog} variant="link" className="text-sm p-0 h-auto">
+                        Table: {tableNumber} (Change)
+                    </Button>
+                 )}
+              </div>
               
-              {cart.length === 0 ? (
+              {!tableNumber && cart.length === 0 && (
+                 <p className="text-muted-foreground text-center py-8">Select a table to start your order.</p>
+              )}
+
+              {tableNumber && cart.length === 0 && (
                 <p className="text-muted-foreground text-center py-8">Your cart is empty</p>
-              ) : (
+              )}
+              
+              {cart.length > 0 && (
                 <div className="space-y-4 mb-6">
                   {cart.map((item, index) => (
                     <div key={index} className="flex justify-between items-start border-b pb-2">
