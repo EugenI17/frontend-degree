@@ -1,15 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { menuService } from "@/services/menuService";
+import { menuService, MenuItem, MenuItemType } from "@/services/menuService";
 import { orderService, OrderItem } from "@/services/orderService";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2, PlusCircle, Trash2, XCircle, ArrowLeft } from "lucide-react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
 interface CartItem extends OrderItem {
@@ -29,6 +30,8 @@ const NewOrder = () => {
   const [extra, setExtra] = useState("");
   const [fara, setFara] = useState("");
   
+  const [selectedProductIngredients, setSelectedProductIngredients] = useState<string[]>([]);
+
   const [isTableNumberDialogOpen, setIsTableNumberDialogOpen] = useState(false);
   const [tempTableNumber, setTempTableNumber] = useState("");
   const navigate = useNavigate();
@@ -38,6 +41,20 @@ const NewOrder = () => {
     queryKey: ['menuItems'],
     queryFn: menuService.getMenuItems,
   });
+
+  // Update selected product ingredients when dialog opens or product changes
+  useEffect(() => {
+    if (isAddingProduct && currentProductId && menuItems) {
+      const product = menuItems.find(item => item.id === currentProductId);
+      if (product && Array.isArray(product.ingredients)) {
+        setSelectedProductIngredients(product.ingredients);
+      } else {
+        setSelectedProductIngredients([]);
+      }
+    } else if (!isAddingProduct) {
+      setSelectedProductIngredients([]); // Clear when dialog is closed
+    }
+  }, [isAddingProduct, currentProductId, menuItems]);
 
   const handleOpenTableNumberDialog = () => {
     setTempTableNumber(tableNumber);
@@ -62,8 +79,8 @@ const NewOrder = () => {
     }
     setCurrentProductId(productId);
     setSpecification("");
-    setExtra("");
-    setFara("");
+    setExtra(""); // Reset extra
+    setFara("");  // Reset fara
     setIsAddingProduct(true);
   };
 
@@ -83,8 +100,8 @@ const NewOrder = () => {
     };
     
     if (specification.trim()) newCartItem.specification = specification.trim();
-    if (extra.trim()) newCartItem.extra = extra.trim();
-    if (fara.trim()) newCartItem.fara = fara.trim();
+    if (extra.trim()) newCartItem.extra = extra.trim(); // extra is now from Select
+    if (fara.trim()) newCartItem.fara = fara.trim();   // fara is now from Select
     
     setCart([...cart, newCartItem]);
     setIsAddingProduct(false);
@@ -126,8 +143,7 @@ const NewOrder = () => {
     const success = await orderService.createOrder(orderData);
     if (success) {
       setCart([]);
-      setTableNumber(""); 
-      setTempTableNumber("");
+      // Table number is kept based on user flow. If it should reset, add: setTableNumber(""); setTempTableNumber("");
     }
   };
 
@@ -138,6 +154,22 @@ const NewOrder = () => {
     toast.info("Order cancelled.");
     navigate('/dashboard');
   };
+
+  const orderedCategories: MenuItemType[] = useMemo(() => ["STARTER", "MAIN", "DESSERT"], []);
+
+  const productsByCategory = useMemo(() => {
+    if (!menuItems) return {};
+    const grouped: Record<string, MenuItem[]> = {};
+    orderedCategories.forEach(category => grouped[category] = []);
+
+    menuItems.forEach(item => {
+      if (orderedCategories.includes(item.type)) {
+        grouped[item.type].push(item);
+      }
+      // Could add an "OTHER" category here if needed
+    });
+    return grouped;
+  }, [menuItems, orderedCategories]);
 
   return (
     <DashboardLayout>
@@ -150,11 +182,9 @@ const NewOrder = () => {
             </Button>
             <h1 className="text-2xl font-bold">New Order</h1>
           </div>
-          {/* Removed the top-right table number button */}
         </div>
         
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Left side - Product listing */}
           <Card className="flex-1">
             <CardContent className="pt-6">
               {!tableNumber.trim() && (
@@ -172,35 +202,44 @@ const NewOrder = () => {
                 </div>
               )}
 
-              {tableNumber.trim() && menuItems && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {menuItems.map((item) => (
-                    <Card key={item.id} className="overflow-hidden">
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-semibold">{item.name}</h3>
-                            <p className="text-sm text-muted-foreground mb-2">{item.price.toFixed(2)} RON</p>
-                          </div>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleAddToCart(item.id, item.name, item.price)}
-                            disabled={!tableNumber.trim()}
-                          >
-                            <PlusCircle className="h-4 w-4 mr-1" />
-                            Add
-                          </Button>
+              {tableNumber.trim() && menuItems && productsByCategory && (
+                <div className="space-y-8">
+                  {orderedCategories.map(category => (
+                    productsByCategory[category] && productsByCategory[category].length > 0 && (
+                      <div key={category}>
+                        <h2 className="text-xl font-semibold mb-3 capitalize border-b pb-2">{category.toLowerCase()}s</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {productsByCategory[category].map((item) => (
+                            <Card key={item.id} className="overflow-hidden">
+                              <CardContent className="p-4">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <h3 className="font-semibold">{item.name}</h3>
+                                    <p className="text-sm text-muted-foreground mb-2">{item.price.toFixed(2)} RON</p>
+                                  </div>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => handleAddToCart(item.id, item.name, item.price)}
+                                    disabled={!tableNumber.trim()}
+                                  >
+                                    <PlusCircle className="h-4 w-4 mr-1" />
+                                    Add
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    )
                   ))}
+                  {/* Optional: Render items not in STARTER, MAIN, DESSERT if any */}
                 </div>
               )}
             </CardContent>
           </Card>
           
-          {/* Right side - Cart */}
           <Card className="w-full md:w-1/3">
             <CardContent className="pt-6">
               <div className="flex justify-between items-center mb-4">
@@ -275,7 +314,6 @@ const NewOrder = () => {
           </Card>
         </div>
 
-        {/* Product Specification Dialog */}
         <Dialog open={isAddingProduct} onOpenChange={setIsAddingProduct}>
           <DialogContent>
             <DialogHeader>
@@ -283,20 +321,42 @@ const NewOrder = () => {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Extra</label>
-                <Input 
-                  placeholder="Extra ingredients or modifications" 
-                  value={extra}
-                  onChange={(e) => setExtra(e.target.value)}
-                />
+                <label htmlFor="extra-select" className="text-sm font-medium">Extra</label>
+                <Select value={extra} onValueChange={setExtra}>
+                  <SelectTrigger id="extra-select">
+                    <SelectValue placeholder="Select an extra ingredient" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedProductIngredients.length > 0 ? (
+                      selectedProductIngredients.map((ingredient) => (
+                        <SelectItem key={`extra-${ingredient}`} value={ingredient}>
+                          {ingredient}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-2 text-sm text-muted-foreground text-center">No ingredients listed for this product.</div>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Without</label>
-                <Input 
-                  placeholder="Items to exclude" 
-                  value={fara}
-                  onChange={(e) => setFara(e.target.value)}
-                />
+                <label htmlFor="fara-select" className="text-sm font-medium">Without</label>
+                <Select value={fara} onValueChange={setFara}>
+                  <SelectTrigger id="fara-select">
+                    <SelectValue placeholder="Select an ingredient to exclude" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedProductIngredients.length > 0 ? (
+                      selectedProductIngredients.map((ingredient) => (
+                        <SelectItem key={`fara-${ingredient}`} value={ingredient}>
+                          {ingredient}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-2 text-sm text-muted-foreground text-center">No ingredients listed for this product.</div>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Special Instructions</label>
@@ -318,7 +378,6 @@ const NewOrder = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Table Number Dialog */}
         <Dialog open={isTableNumberDialogOpen} onOpenChange={setIsTableNumberDialogOpen}>
           <DialogContent>
             <DialogHeader>
