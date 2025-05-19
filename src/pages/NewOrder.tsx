@@ -4,12 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { menuService } from "@/services/menuService";
 import { orderService, OrderItem } from "@/services/orderService";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, PlusCircle, Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Loader2, PlusCircle, Trash2, XCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
 interface CartItem extends OrderItem {
@@ -29,15 +28,34 @@ const NewOrder = () => {
   const [extra, setExtra] = useState("");
   const [fara, setFara] = useState("");
   
+  const [isTableNumberDialogOpen, setIsTableNumberDialogOpen] = useState(false);
+  const [tempTableNumber, setTempTableNumber] = useState("");
+
   // Fetch menu items
   const { data: menuItems, isLoading } = useQuery({
     queryKey: ['menuItems'],
     queryFn: menuService.getMenuItems,
   });
 
+  const handleOpenTableNumberDialog = () => {
+    setTempTableNumber(tableNumber); // Pre-fill with current table number if editing
+    setIsTableNumberDialogOpen(true);
+  };
+
+  const handleConfirmTableNumber = () => {
+    if (!tempTableNumber.trim()) {
+      toast.error("Please enter a valid table number.");
+      return;
+    }
+    setTableNumber(tempTableNumber.trim());
+    setIsTableNumberDialogOpen(false);
+    toast.success(`Table number set to: ${tempTableNumber.trim()}`);
+  };
+
   const handleAddToCart = (productId: string, productName: string, productPrice: number) => {
     if (!tableNumber.trim()) {
-      toast.error("Please enter a table number before adding items.");
+      toast.error("Please set a table number before adding items.");
+      handleOpenTableNumberDialog(); // Prompt to set table number
       return;
     }
     setCurrentProductId(productId);
@@ -84,6 +102,7 @@ const NewOrder = () => {
   const placeOrder = async () => {
     if (!tableNumber.trim()) {
       toast.error("Please enter a table number");
+      handleOpenTableNumberDialog();
       return;
     }
 
@@ -105,36 +124,48 @@ const NewOrder = () => {
     const success = await orderService.createOrder(orderData);
     if (success) {
       setCart([]);
-      setTableNumber("");
+      setTableNumber(""); // Reset table number after successful order
+      setTempTableNumber("");
     }
+  };
+
+  const handleCancelOrder = () => {
+    setCart([]);
+    setTableNumber("");
+    setTempTableNumber("");
+    toast.info("Order cancelled.");
   };
 
   return (
     <DashboardLayout>
       <div className="container mx-auto py-6">
-        <h1 className="text-2xl font-bold mb-6">New Order</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">New Order</h1>
+          <Button onClick={handleOpenTableNumberDialog} variant="outline">
+            {tableNumber ? `Table: ${tableNumber} (Change)` : "Set Table Number"}
+          </Button>
+        </div>
         
         <div className="flex flex-col md:flex-row gap-6">
           {/* Left side - Product listing */}
           <Card className="flex-1">
             <CardContent className="pt-6">
-              <div className="mb-4">
-                <Input
-                  type="text"
-                  placeholder="Table Number"
-                  value={tableNumber}
-                  onChange={(e) => setTableNumber(e.target.value)}
-                  className="mb-4"
-                />
-              </div>
+              {!tableNumber.trim() && (
+                <div className="text-center py-10 text-muted-foreground">
+                  <p className="mb-2">Please set a table number to start adding products.</p>
+                  <Button onClick={handleOpenTableNumberDialog}>Set Table Number</Button>
+                </div>
+              )}
               
-              {isLoading ? (
+              {isLoading && !menuItems && (
                 <div className="flex justify-center items-center h-40">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-              ) : (
+              )}
+
+              {tableNumber.trim() && menuItems && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {menuItems?.map((item) => (
+                  {menuItems.map((item) => (
                     <Card key={item.id} className="overflow-hidden">
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start">
@@ -147,7 +178,7 @@ const NewOrder = () => {
                             size="sm" 
                             variant="outline"
                             onClick={() => handleAddToCart(item.id, item.name, item.price)}
-                            disabled={!tableNumber.trim()} // Disable if table number is not set
+                            disabled={!tableNumber.trim()}
                           >
                             <PlusCircle className="h-4 w-4 mr-1" />
                             Add
@@ -198,17 +229,26 @@ const NewOrder = () => {
                 </div>
               )}
               
-              <div className="border-t pt-4">
+              <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between font-bold">
                   <span>Total:</span>
                   <span>{calculateTotal().toFixed(2)} RON</span>
                 </div>
                 <Button 
-                  className="w-full mt-4" 
-                  disabled={cart.length === 0 || !tableNumber.trim()} // Also disable place order if no table number
+                  className="w-full" 
+                  disabled={cart.length === 0 || !tableNumber.trim()}
                   onClick={placeOrder}
                 >
                   Place Order
+                </Button>
+                <Button 
+                  className="w-full" 
+                  variant="outline"
+                  onClick={handleCancelOrder}
+                  disabled={cart.length === 0 && !tableNumber.trim()} // Disable if nothing to cancel
+                >
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Cancel Order
                 </Button>
               </div>
             </CardContent>
@@ -253,6 +293,32 @@ const NewOrder = () => {
               </Button>
               <Button onClick={confirmAddToCart}>
                 Add to Order
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Table Number Dialog */}
+        <Dialog open={isTableNumberDialogOpen} onOpenChange={setIsTableNumberDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{tableNumber ? "Change Table Number" : "Set Table Number"}</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <Input
+                type="text"
+                placeholder="Enter Table Number"
+                value={tempTableNumber}
+                onChange={(e) => setTempTableNumber(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsTableNumberDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleConfirmTableNumber}>
+                Confirm
               </Button>
             </DialogFooter>
           </DialogContent>
