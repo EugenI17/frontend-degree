@@ -32,7 +32,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Check for existing auth token on mount
     const token = localStorage.getItem('auth_token');
     const storedUserType = localStorage.getItem('user_type') as 'admin' | 'employee' | null;
     const storedUsername = localStorage.getItem('username');
@@ -46,17 +45,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     setIsLoading(false);
 
-    // Set up a token refresh interval to keep the session alive
-    // Refresh token every 50 minutes to ensure the session stays active for the 1 hour period
+    // Adjust token refresh interval.
+    // If access tokens expire quickly (e.g., user reports ~5 min),
+    // refresh more frequently to keep the access token fresh.
+    // Note: The ultimate session duration depends on the refresh token's validity,
+    // which is controlled by the backend.
+    const REFRESH_INTERVAL_MS = 4 * 60 * 1000; // Refresh every 4 minutes
+
     const refreshInterval = setInterval(() => {
       const currentToken = localStorage.getItem('auth_token');
       if (currentToken) {
-        console.log('Refreshing auth token to keep session alive');
+        console.log(`Periodically refreshing auth token (every ${REFRESH_INTERVAL_MS / 60000} mins) to keep session alive`);
         api.refreshToken().catch(error => {
-          console.error('Failed to refresh token:', error);
+          console.error('Periodic token refresh failed:', error);
+          // Note: If this periodic refresh fails, the user is not immediately logged out here.
+          // Logout will typically occur when a subsequent API call fails its own refresh attempt.
         });
       }
-    }, 50 * 60 * 1000); // 50 minutes in milliseconds
+    }, REFRESH_INTERVAL_MS);
 
     return () => {
       clearInterval(refreshInterval);
