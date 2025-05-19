@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import MenuManagement from "./pages/MenuManagement";
 import StaffManagement from "./pages/StaffManagement";
 import NewOrder from "./pages/NewOrder";
+import ActiveOrders from "./pages/ActiveOrders"; // Import the new page
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -42,6 +43,11 @@ const App = () => (
             <Route path="/new-order" element={
               <ProtectedRoute>
                 <NewOrder />
+              </ProtectedRoute>
+            } />
+            <Route path="/active-orders" element={ // Add the new route
+              <ProtectedRoute>
+                <ActiveOrders />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -80,13 +79,19 @@ const Dashboard: React.FC = () => {
                 </CardContent>
               </Card>
               
-              <Card>
+              <Card className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <CardTitle>Active Orders</CardTitle>
                   <CardDescription>Manage ongoing orders</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p>View and update status of orders currently in progress.</p>
+                  <p className="mb-4">View and update status of orders currently in progress.</p>
+                  <Link 
+                    to="/active-orders" 
+                    className="text-restaurant-primary hover:underline font-medium"
+                  >
+                    View Active Orders →
+                  </Link>
                 </CardContent>
               </Card>
             </>
