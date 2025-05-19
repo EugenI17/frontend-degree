@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -6,8 +5,9 @@ import { orderService, Order } from '@/services/orderService';
 import { menuService } from '@/services/menuService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader, ArrowLeft, PlusCircle } from 'lucide-react'; // Added ArrowLeft and PlusCircle
+import { Loader, ArrowLeft, PlusCircle, CheckCircle } from 'lucide-react';
 
 interface EnrichedOrderItem extends Omit<Order['orderItemDtos'][0], 'productId'> {
   productName: string;
@@ -20,7 +20,8 @@ interface EnrichedOrder extends Omit<Order, 'orderItemDtos'> {
 
 const ActiveOrders: React.FC = () => {
   const navigate = useNavigate();
-  const queryClient = useQueryClient(); // For potential refetch later
+  const queryClient = useQueryClient();
+  const [completingOrderTable, setCompletingOrderTable] = useState<string | null>(null);
 
   const { data: menuItems, isLoading: isLoadingMenu, error: menuError } = useQuery({
     queryKey: ['menuItems'],
@@ -62,16 +63,19 @@ const ActiveOrders: React.FC = () => {
     navigate('/new-order', { state: { tableNumber, existingOrderItems: getAllItemsForTable(tableNumber) } });
   };
 
-  const handleCompleteOrder = (tableNumber: string) => {
-    // Functionality to be added later
-    console.log(`Complete order for table ${tableNumber}`);
+  const handleCompleteOrder = async (tableNumber: string) => {
+    setCompletingOrderTable(tableNumber);
+    const success = await orderService.finishOrder(tableNumber);
+    if (success) {
+      queryClient.invalidateQueries({ queryKey: ['activeOrders'] });
+    }
+    setCompletingOrderTable(null);
   };
 
   const getAllItemsForTable = (tableNumber: string): EnrichedOrderItem[] => {
     if (!enrichedOrdersByTable[tableNumber]) return [];
     return enrichedOrdersByTable[tableNumber].flatMap(order => order.orderItemDtos);
   };
-
 
   if (isLoadingMenu || isLoadingOrders) {
     return (
@@ -109,12 +113,13 @@ const ActiveOrders: React.FC = () => {
           </Button>
         </div>
         
-        {tableNumbers.length === 0 ? (
+        {tableNumbers.length === 0 && !isLoadingOrders ? (
           <p>No active orders at the moment.</p>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {tableNumbers.map(tableNumber => {
               const allItemsForThisTable = getAllItemsForTable(tableNumber);
+              const isCompletingThisOrder = completingOrderTable === tableNumber;
               return (
                 <Card key={tableNumber} className="flex flex-col">
                   <CardHeader>
@@ -123,21 +128,23 @@ const ActiveOrders: React.FC = () => {
                         <CardDescription>Status: {enrichedOrdersByTable[tableNumber][0].status}</CardDescription>
                     )}
                   </CardHeader>
-                  <CardContent className="flex-grow space-y-2">
-                    {allItemsForThisTable.length > 0 ? (
-                      <ul className="list-disc list-inside text-sm space-y-1">
-                        {allItemsForThisTable.map((item, itemIndex) => (
-                          <li key={`${item.productId}-${itemIndex}-${tableNumber}`}>
-                            {item.productName}
-                            {item.extra && <span className="text-xs text-gray-500"> (Extra: {item.extra})</span>}
-                            {item.fara && <span className="text-xs text-gray-500"> (Without: {item.fara})</span>}
-                            {item.specification && <span className="text-xs text-gray-500"> (Notes: {item.specification})</span>}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No items for this table yet.</p>
-                    )}
+                  <CardContent className="flex-grow space-y-2 h-48">
+                    <ScrollArea className="h-full w-full pr-3">
+                      {allItemsForThisTable.length > 0 ? (
+                        <ul className="list-disc list-inside text-sm space-y-1">
+                          {allItemsForThisTable.map((item, itemIndex) => (
+                            <li key={`${item.productId}-${itemIndex}-${tableNumber}`}>
+                              {item.productName}
+                              {item.extra && <span className="text-xs text-gray-500"> (Extra: {item.extra})</span>}
+                              {item.fara && <span className="text-xs text-gray-500"> (Without: {item.fara})</span>}
+                              {item.specification && <span className="text-xs text-gray-500"> (Notes: {item.specification})</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No items for this table yet.</p>
+                      )}
+                    </ScrollArea>
                   </CardContent>
                   <div className="p-4 border-t flex gap-2">
                     <Button 
@@ -145,6 +152,7 @@ const ActiveOrders: React.FC = () => {
                       size="sm" 
                       className="flex-1"
                       onClick={() => handleAddProducts(tableNumber)}
+                      disabled={isCompletingThisOrder}
                     >
                       <PlusCircle className="mr-2 h-4 w-4" />
                       Add Products
@@ -154,8 +162,14 @@ const ActiveOrders: React.FC = () => {
                       size="sm" 
                       className="flex-1"
                       onClick={() => handleCompleteOrder(tableNumber)}
+                      disabled={isCompletingThisOrder}
                     >
-                      Complete Order
+                      {isCompletingThisOrder ? (
+                        <Loader className="animate-spin mr-2 h-4 w-4" />
+                      ) : (
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                      )}
+                      {isCompletingThisOrder ? 'Completing...' : 'Complete Order'}
                     </Button>
                   </div>
                 </Card>

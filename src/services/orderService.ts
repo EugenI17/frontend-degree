@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { api } from "./api";
 import { MenuItem } from "./menuService";
@@ -108,6 +107,40 @@ export const orderService = {
     } catch (error) {
       console.error("Error updating order:", error);
       toast.error("Failed to update order");
+      return false;
+    }
+  },
+
+  // New function to finish an order
+  async finishOrder(tableNumber: string): Promise<boolean> {
+    try {
+      const payload = {
+        tableNumber: tableNumber,
+        orderItemDtos: [],
+      };
+      const response = await api.fetchWithTokenRefresh(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8081'}/api/order/finish`, 
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (response.ok) {
+        toast.success(`Order for table ${tableNumber} completed successfully`);
+        return true;
+      } else {
+        const errorText = await response.text();
+        console.error(`Failed to complete order for table ${tableNumber}:`, response.status, errorText);
+        toast.error(`Failed to complete order for table ${tableNumber} (${response.status})`);
+        return false;
+      }
+    } catch (error) {
+      console.error(`Error completing order for table ${tableNumber}:`, error);
+      toast.error(`Failed to complete order for table ${tableNumber}`);
       return false;
     }
   }
