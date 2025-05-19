@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import { FileText } from 'lucide-react'; // Using FileText for completed orders icon
 
 const Dashboard: React.FC = () => {
   const { userType } = useAuth();
@@ -56,6 +58,7 @@ const Dashboard: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <p>Monitor daily, weekly and monthly sales performance.</p>
+                  {/* Link to Sales Reports page can be added here later */}
                 </CardContent>
               </Card>
             </>
@@ -94,6 +97,25 @@ const Dashboard: React.FC = () => {
                   </Link>
                 </CardContent>
               </Card>
+
+              <Card className="hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-restaurant-primary" />
+                    <CardTitle>Completed Orders</CardTitle>
+                  </div>
+                  <CardDescription>View all finalized orders</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="mb-4">Review orders that have been successfully completed and paid.</p>
+                  <Link 
+                    to="/completed-orders" 
+                    className="text-restaurant-primary hover:underline font-medium"
+                  >
+                    View Completed Orders →
+                  </Link>
+                </CardContent>
+              </Card>
             </>
           )}
         </div>
@@ -103,3 +125,4 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
+

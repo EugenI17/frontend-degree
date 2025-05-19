@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner"; // Renamed to avoid conflict
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +10,7 @@ import MenuManagement from "./pages/MenuManagement";
 import StaffManagement from "./pages/StaffManagement";
 import NewOrder from "./pages/NewOrder";
 import ActiveOrders from "./pages/ActiveOrders";
+import CompletedOrders from "./pages/CompletedOrders"; // Import the new page
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -48,6 +48,11 @@ const App = () => (
             <Route path="/active-orders" element={
               <ProtectedRoute>
                 <ActiveOrders />
+              </ProtectedRoute>
+            } />
+            <Route path="/completed-orders" element={ // Add route for CompletedOrders
+              <ProtectedRoute>
+                <CompletedOrders />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

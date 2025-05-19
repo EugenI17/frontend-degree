@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -6,8 +7,8 @@ import { menuService, MenuItem } from '@/services/menuService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader, ArrowLeft, PlusCircle, CheckCircle } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Loader, ArrowLeft } from 'lucide-react';
 
 interface EnrichedOrderItem extends Omit<Order['orderItemDtos'][0], 'productId'> {
   productName: string;
@@ -17,32 +18,33 @@ interface EnrichedOrderItem extends Omit<Order['orderItemDtos'][0], 'productId'>
 interface EnrichedOrder extends Omit<Order, 'orderItemDtos'> {
   orderItemDtos: EnrichedOrderItem[];
   status?: string;
+  createdAt?: string; 
 }
 
-const ActiveOrders: React.FC = () => {
+const CompletedOrders: React.FC = () => {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [completingOrderTable, setCompletingOrderTable] = useState<string | null>(null);
 
   const { data: menuItems, isLoading: isLoadingMenu, error: menuError } = useQuery({
-    queryKey: ['menuItems'],
+    queryKey: ['menuItems'], // Reuse menu items query
     queryFn: menuService.getMenuItems,
   });
 
+  // Fetch all orders, filtering will happen client-side
   const { data: allOrders, isLoading: isLoadingOrders, error: ordersError } = useQuery({
-    queryKey: ['activeOrdersData'],
-    queryFn: orderService.getActiveOrders,
+    queryKey: ['completedOrdersData'], // Unique queryKey for this page's data
+    queryFn: orderService.getActiveOrders, // Reusing the same fetch function
   });
 
-  const [enrichedOrdersByTable, setEnrichedOrdersByTable] = useState<Record<string, EnrichedOrder[]>>({});
+  const [enrichedCompletedOrdersByTable, setEnrichedCompletedOrdersByTable] = useState<Record<string, EnrichedOrder[]>>({});
 
   useEffect(() => {
     if (allOrders && menuItems) {
       const productMap = new Map(menuItems.map(item => [String(item.id), item.name]));
       
-      const inProgressOrders = allOrders.filter(order => order.status === 'IN_PROGRESS');
+      // Filter for COMPLETED orders
+      const completedOrders = allOrders.filter(order => order.status === 'COMPLETED');
       
-      const ordersWithProductNames = inProgressOrders.map(order => ({
+      const ordersWithProductNames = completedOrders.map(order => ({
         ...order,
         orderItemDtos: order.orderItemDtos.map(item => ({
           ...item,
@@ -56,37 +58,40 @@ const ActiveOrders: React.FC = () => {
         if (!groupedByTable[order.tableNumber]) {
           groupedByTable[order.tableNumber] = [];
         }
+        // To display orders somewhat chronologically within a table, sort by createdAt if available
         groupedByTable[order.tableNumber].push(order);
+        groupedByTable[order.tableNumber].sort((a, b) => {
+            if (a.createdAt && b.createdAt) {
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(); // Most recent first
+            }
+            return 0;
+        });
       });
-      setEnrichedOrdersByTable(groupedByTable);
+      setEnrichedCompletedOrdersByTable(groupedByTable);
     }
   }, [allOrders, menuItems]);
 
-  const handleAddProducts = (tableNumber: string) => {
-    navigate('/new-order', { state: { tableNumber, existingOrderItems: getAllItemsForTable(tableNumber) } });
-  };
-
-  const handleCompleteOrder = async (tableNumber: string) => {
-    setCompletingOrderTable(tableNumber);
-    const success = await orderService.finishOrder(tableNumber);
-    if (success) {
-      queryClient.invalidateQueries({ queryKey: ['activeOrdersData'] });
-      queryClient.invalidateQueries({ queryKey: ['completedOrdersData'] });
-    }
-    setCompletingOrderTable(null);
-  };
-
   const getAllItemsForTable = (tableNumber: string): EnrichedOrderItem[] => {
-    if (!enrichedOrdersByTable[tableNumber]) return [];
-    return enrichedOrdersByTable[tableNumber].flatMap(order => order.orderItemDtos);
+    if (!enrichedCompletedOrdersByTable[tableNumber]) return [];
+    return enrichedCompletedOrdersByTable[tableNumber].flatMap(order => order.orderItemDtos);
   };
+  
+  const getOrderDate = (tableNumber: string): string | null => {
+    if (!enrichedCompletedOrdersByTable[tableNumber] || enrichedCompletedOrdersByTable[tableNumber].length === 0) return null;
+    // Assuming all orders for a table in this view are completed around the same time, 
+    // or we take the latest completed order's date for that table grouping.
+    // For simplicity, taking the first one after sorting (which should be the latest if sorted by createdAt descending).
+    const order = enrichedCompletedOrdersByTable[tableNumber][0];
+    return order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "Date N/A";
+  }
+
 
   if (isLoadingMenu || isLoadingOrders) {
     return (
       <DashboardLayout>
         <div className="flex justify-center items-center h-full">
           <Loader className="animate-spin h-8 w-8 text-restaurant-primary" />
-          <p className="ml-2">Loading active orders...</p>
+          <p className="ml-2">Loading completed orders...</p>
         </div>
       </DashboardLayout>
     );
@@ -104,7 +109,16 @@ const ActiveOrders: React.FC = () => {
     );
   }
   
-  const tableNumbers = Object.keys(enrichedOrdersByTable);
+  const tableNumbers = Object.keys(enrichedCompletedOrdersByTable).sort((a, b) => {
+    // Sort tables by the latest order date within them, if possible
+    const dateA = enrichedCompletedOrdersByTable[a][0]?.createdAt;
+    const dateB = enrichedCompletedOrdersByTable[b][0]?.createdAt;
+    if (dateA && dateB) {
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    }
+    return 0;
+  });
+
 
   return (
     <DashboardLayout>
@@ -113,24 +127,22 @@ const ActiveOrders: React.FC = () => {
           <Button variant="outline" size="icon" onClick={() => navigate('/dashboard')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-3xl font-display font-bold text-restaurant-primary">Active Orders (In Progress)</h1>
+          <h1 className="text-3xl font-display font-bold text-restaurant-primary">Completed Orders</h1>
         </div>
         
         {tableNumbers.length === 0 && !isLoadingOrders ? (
-          <p>No orders currently in progress.</p>
+          <p>No completed orders found.</p>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {tableNumbers.map(tableNumber => {
               const allItemsForThisTable = getAllItemsForTable(tableNumber);
-              const isCompletingThisOrder = completingOrderTable === tableNumber;
-              const orderForStatus = enrichedOrdersByTable[tableNumber][0];
+              const orderDate = getOrderDate(tableNumber);
               return (
                 <Card key={tableNumber} className="flex flex-col">
                   <CardHeader>
                     <CardTitle>Table {tableNumber}</CardTitle>
-                    {orderForStatus?.status && (
-                        <CardDescription>Status: {orderForStatus.status}</CardDescription>
-                    )}
+                    {orderDate && <CardDescription>Date: {orderDate}</CardDescription>}
+                    <CardDescription>Status: COMPLETED</CardDescription>
                   </CardHeader>
                   <CardContent className="flex-grow space-y-2 h-48">
                     <ScrollArea className="h-full w-full pr-3">
@@ -146,36 +158,11 @@ const ActiveOrders: React.FC = () => {
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-sm text-muted-foreground">No items for this table yet.</p>
+                        <p className="text-sm text-muted-foreground">No items found for this completed order.</p>
                       )}
                     </ScrollArea>
                   </CardContent>
-                  <div className="p-4 border-t flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={() => handleAddProducts(tableNumber)}
-                      disabled={isCompletingThisOrder}
-                    >
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add Products
-                    </Button>
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={() => handleCompleteOrder(tableNumber)}
-                      disabled={isCompletingThisOrder}
-                    >
-                      {isCompletingThisOrder ? (
-                        <Loader className="animate-spin mr-2 h-4 w-4" />
-                      ) : (
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                      )}
-                      {isCompletingThisOrder ? 'Completing...' : 'Complete Order'}
-                    </Button>
-                  </div>
+                  {/* No action buttons for completed orders */}
                 </Card>
               );
             })}
@@ -186,4 +173,5 @@ const ActiveOrders: React.FC = () => {
   );
 };
 
-export default ActiveOrders;
+export default CompletedOrders;
+
