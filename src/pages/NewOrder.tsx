@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -37,6 +36,10 @@ const NewOrder = () => {
   });
 
   const handleAddToCart = (productId: string, productName: string, productPrice: number) => {
+    if (!tableNumber.trim()) {
+      toast.error("Please enter a table number before adding items.");
+      return;
+    }
     setCurrentProductId(productId);
     setSpecification("");
     setExtra("");
@@ -137,15 +140,14 @@ const NewOrder = () => {
                         <div className="flex justify-between items-start">
                           <div>
                             <h3 className="font-semibold">{item.name}</h3>
-                            <p className="text-sm text-muted-foreground mb-2">${item.price.toFixed(2)}</p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {item.ingredients.join(", ")}
-                            </p>
+                            <p className="text-sm text-muted-foreground mb-2">{item.price.toFixed(2)} RON</p>
+                            {/* Ingredients display removed */}
                           </div>
                           <Button 
                             size="sm" 
                             variant="outline"
                             onClick={() => handleAddToCart(item.id, item.name, item.price)}
+                            disabled={!tableNumber.trim()} // Disable if table number is not set
                           >
                             <PlusCircle className="h-4 w-4 mr-1" />
                             Add
@@ -173,7 +175,7 @@ const NewOrder = () => {
                     <div key={index} className="flex justify-between items-start border-b pb-2">
                       <div>
                         <h3 className="font-medium">{item.product.name}</h3>
-                        <p className="text-sm text-muted-foreground">${item.product.price.toFixed(2)}</p>
+                        <p className="text-sm text-muted-foreground">{item.product.price.toFixed(2)} RON</p>
                         {item.specification && (
                           <p className="text-xs">Specification: {item.specification}</p>
                         )}
@@ -199,11 +201,11 @@ const NewOrder = () => {
               <div className="border-t pt-4">
                 <div className="flex justify-between font-bold">
                   <span>Total:</span>
-                  <span>${calculateTotal().toFixed(2)}</span>
+                  <span>{calculateTotal().toFixed(2)} RON</span>
                 </div>
                 <Button 
                   className="w-full mt-4" 
-                  disabled={cart.length === 0 || !tableNumber}
+                  disabled={cart.length === 0 || !tableNumber.trim()} // Also disable place order if no table number
                   onClick={placeOrder}
                 >
                   Place Order
