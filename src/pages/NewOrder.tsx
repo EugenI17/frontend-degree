@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2, PlusCircle, Trash2, XCircle, ArrowLeft } from "lucide-react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MultiSelectPopover } from "@/components/ui/MultiSelectPopover"; // Import the new component
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
 interface CartItem extends OrderItem {
@@ -27,8 +27,8 @@ const NewOrder = () => {
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [currentProductId, setCurrentProductId] = useState<string | null>(null);
   const [specification, setSpecification] = useState("");
-  const [extra, setExtra] = useState("");
-  const [fara, setFara] = useState("");
+  const [extra, setExtra] = useState<string[]>([]);
+  const [fara, setFara] = useState<string[]>([]);
   
   const [selectedProductIngredients, setSelectedProductIngredients] = useState<string[]>([]);
 
@@ -79,8 +79,8 @@ const NewOrder = () => {
     }
     setCurrentProductId(productId);
     setSpecification("");
-    setExtra(""); // Reset extra
-    setFara("");  // Reset fara
+    setExtra([]);  
+    setFara([]);  
     setIsAddingProduct(true);
   };
 
@@ -100,8 +100,8 @@ const NewOrder = () => {
     };
     
     if (specification.trim()) newCartItem.specification = specification.trim();
-    if (extra.trim()) newCartItem.extra = extra.trim(); // extra is now from Select
-    if (fara.trim()) newCartItem.fara = fara.trim();   // fara is now from Select
+    if (extra.length > 0) newCartItem.extra = extra.join(', '); 
+    if (fara.length > 0) newCartItem.fara = fara.join(', ');   
     
     setCart([...cart, newCartItem]);
     setIsAddingProduct(false);
@@ -166,7 +166,6 @@ const NewOrder = () => {
       if (orderedCategories.includes(item.type)) {
         grouped[item.type].push(item);
       }
-      // Could add an "OTHER" category here if needed
     });
     return grouped;
   }, [menuItems, orderedCategories]);
@@ -234,7 +233,6 @@ const NewOrder = () => {
                       </div>
                     )
                   ))}
-                  {/* Optional: Render items not in STARTER, MAIN, DESSERT if any */}
                 </div>
               )}
             </CardContent>
@@ -321,42 +319,22 @@ const NewOrder = () => {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <label htmlFor="extra-select" className="text-sm font-medium">Extra</label>
-                <Select value={extra} onValueChange={setExtra}>
-                  <SelectTrigger id="extra-select">
-                    <SelectValue placeholder="Select an extra ingredient" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {selectedProductIngredients.length > 0 ? (
-                      selectedProductIngredients.map((ingredient) => (
-                        <SelectItem key={`extra-${ingredient}`} value={ingredient}>
-                          {ingredient}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <div className="p-2 text-sm text-muted-foreground text-center">No ingredients listed for this product.</div>
-                    )}
-                  </SelectContent>
-                </Select>
+                <label htmlFor="extra-multiselect" className="text-sm font-medium">Extra</label>
+                <MultiSelectPopover
+                  options={selectedProductIngredients}
+                  selectedValues={extra}
+                  onValueChange={setExtra}
+                  triggerPlaceholder="Select extra ingredients"
+                />
               </div>
               <div className="space-y-2">
-                <label htmlFor="fara-select" className="text-sm font-medium">Without</label>
-                <Select value={fara} onValueChange={setFara}>
-                  <SelectTrigger id="fara-select">
-                    <SelectValue placeholder="Select an ingredient to exclude" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {selectedProductIngredients.length > 0 ? (
-                      selectedProductIngredients.map((ingredient) => (
-                        <SelectItem key={`fara-${ingredient}`} value={ingredient}>
-                          {ingredient}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <div className="p-2 text-sm text-muted-foreground text-center">No ingredients listed for this product.</div>
-                    )}
-                  </SelectContent>
-                </Select>
+                <label htmlFor="fara-multiselect" className="text-sm font-medium">Without</label>
+                 <MultiSelectPopover
+                  options={selectedProductIngredients}
+                  selectedValues={fara}
+                  onValueChange={setFara}
+                  triggerPlaceholder="Select ingredients to exclude"
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Special Instructions</label>
