@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { menuService } from "@/services/menuService";
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2, PlusCircle, Trash2, XCircle } from "lucide-react";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
 interface CartItem extends OrderItem {
@@ -30,6 +31,7 @@ const NewOrder = () => {
   
   const [isTableNumberDialogOpen, setIsTableNumberDialogOpen] = useState(false);
   const [tempTableNumber, setTempTableNumber] = useState("");
+  const navigate = useNavigate();
 
   // Fetch menu items
   const { data: menuItems, isLoading } = useQuery({
@@ -38,7 +40,7 @@ const NewOrder = () => {
   });
 
   const handleOpenTableNumberDialog = () => {
-    setTempTableNumber(tableNumber); // Pre-fill with current table number if editing
+    setTempTableNumber(tableNumber);
     setIsTableNumberDialogOpen(true);
   };
 
@@ -124,7 +126,7 @@ const NewOrder = () => {
     const success = await orderService.createOrder(orderData);
     if (success) {
       setCart([]);
-      setTableNumber(""); // Reset table number after successful order
+      setTableNumber(""); 
       setTempTableNumber("");
     }
   };
@@ -134,6 +136,7 @@ const NewOrder = () => {
     setTableNumber("");
     setTempTableNumber("");
     toast.info("Order cancelled.");
+    navigate('/dashboard');
   };
 
   return (
@@ -142,7 +145,7 @@ const NewOrder = () => {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">New Order</h1>
           <Button onClick={handleOpenTableNumberDialog} variant="outline">
-            {tableNumber ? `Table: ${tableNumber} (Change)` : "Set Table Number"}
+            {tableNumber ? `Table: ${tableNumber} (Change)` : "Select Table"} 
           </Button>
         </div>
         
@@ -152,8 +155,7 @@ const NewOrder = () => {
             <CardContent className="pt-6">
               {!tableNumber.trim() && (
                 <div className="text-center py-10 text-muted-foreground">
-                  <p className="mb-2">Please set a table number to start adding products.</p>
-                  <Button onClick={handleOpenTableNumberDialog}>Set Table Number</Button>
+                  <p className="mb-2">Please select a table number to start adding products.</p>
                 </div>
               )}
               
@@ -172,7 +174,6 @@ const NewOrder = () => {
                           <div>
                             <h3 className="font-semibold">{item.name}</h3>
                             <p className="text-sm text-muted-foreground mb-2">{item.price.toFixed(2)} RON</p>
-                            {/* Ingredients display removed */}
                           </div>
                           <Button 
                             size="sm" 
@@ -245,7 +246,7 @@ const NewOrder = () => {
                   className="w-full" 
                   variant="outline"
                   onClick={handleCancelOrder}
-                  disabled={cart.length === 0 && !tableNumber.trim()} // Disable if nothing to cancel
+                  disabled={cart.length === 0 && !tableNumber.trim()}
                 >
                   <XCircle className="mr-2 h-4 w-4" />
                   Cancel Order
