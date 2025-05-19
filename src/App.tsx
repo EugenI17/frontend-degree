@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner"; // Renamed to avoid conflict
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,7 +22,7 @@ const App = () => (
     <AuthProvider>
       <TooltipProvider>
         <Toaster />
-        <SonnerToaster duration={300} /> {/* Set duration to 300ms */}
+        <SonnerToaster duration={800} /> {/* Changed duration from 300ms to 800ms */}
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Auth />} />
@@ -64,3 +65,4 @@ const App = () => (
 );
 
 export default App;
+

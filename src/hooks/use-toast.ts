@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 import type {
@@ -6,7 +7,7 @@ import type {
 } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 300 // Changed from 1000000 to 300ms
+const TOAST_REMOVE_DELAY = 800 // Changed from 300ms to 800ms
 
 type ToasterToast = ToastProps & {
   id: string
@@ -90,6 +91,7 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action
 
+      // Setting a timeout to remove the toast after a delay
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -187,3 +189,4 @@ function useToast() {
 }
 
 export { useToast, toast }
+
