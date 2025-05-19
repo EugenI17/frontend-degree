@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { menuService, MenuItem, MenuItemType } from "@/services/menuService";
-import { orderService, OrderItem, UpdateOrderPayload } from "@/services/orderService";
+import { orderService, OrderItem, UpdateOrderPayload, Order } from "@/services/orderService";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -42,21 +42,45 @@ const NewOrder = () => {
   const [isUpdateMode, setIsUpdateMode] = useState(false);
 
   // Fetch menu items
-  const { data: menuItems, isLoading } = useQuery({
+  const { data: menuItems, isLoading: isLoadingMenu } = useQuery({ // Renamed isLoading to avoid conflict
     queryKey: ['menuItems'],
     queryFn: menuService.getMenuItems,
   });
+
+  // Fetch active orders to check against when setting a table for a new order
+  const { 
+    data: activeOrders, 
+    isLoading: isLoadingActiveOrders, 
+    error: activeOrdersError 
+  } = useQuery<Order[]>({
+    queryKey: ['activeOrders'], // Using a common key, might be reused
+    queryFn: orderService.getActiveOrders,
+    enabled: !isUpdateMode, // Only fetch if not in update mode (i.e., for new orders)
+  });
+
+  useEffect(() => {
+    if (activeOrdersError) {
+      // Inform user about the error but don't necessarily block them
+      toast.error("Could not verify table status. Please proceed with caution or try again later.");
+      console.error("Error fetching active orders for check:", activeOrdersError);
+    }
+  }, [activeOrdersError]);
 
   useEffect(() => {
     if (location.state?.tableNumber) {
       const passedTableNumber = String(location.state.tableNumber);
       setTableNumber(passedTableNumber);
-      setTempTableNumber(passedTableNumber); // Sync tempTableNumber as well
+      setTempTableNumber(passedTableNumber); 
       setIsUpdateMode(true);
-      // Do not open table dialog if tableNumber is passed
       setIsTableNumberDialogOpen(false); 
+    } else {
+      // If not in update mode and no table number is set, prompt for it.
+      // This ensures the dialog opens on initial load for a new order.
+      if (!tableNumber && !isUpdateMode) {
+        setIsTableNumberDialogOpen(true);
+      }
     }
-  }, [location.state]);
+  }, [location.state, isUpdateMode]); // Added isUpdateMode to dependencies
 
   // Update selected product ingredients when dialog opens or product changes
   useEffect(() => {
@@ -77,7 +101,7 @@ const NewOrder = () => {
         toast.info("Table number is fixed when adding to an existing order.");
         return;
     }
-    setTempTableNumber(tableNumber);
+    setTempTableNumber(tableNumber); // Pre-fill with current table number if any
     setIsTableNumberDialogOpen(true);
   };
 
@@ -86,13 +110,28 @@ const NewOrder = () => {
       toast.error("Please enter a valid table number.");
       return;
     }
+
+    // Check for active orders on this table ONLY IF it's a new order
+    if (!isUpdateMode && activeOrders) {
+      const existingActiveOrder = activeOrders.find(
+        (order) => order.tableNumber === tempTableNumber.trim() && order.status !== 'COMPLETED'
+      );
+      if (existingActiveOrder) {
+        toast.error(`Table ${tempTableNumber.trim()} already has an active order. Please use a different table or add to the existing order from the Active Orders page.`);
+        return; // Do not set table number, keep dialog open
+      }
+    }
+    
+    // If isLoadingActiveOrders and not in update mode, the button should be disabled (handled in JSX)
+    // If activeOrdersError, a toast is shown, and this check might be skipped if activeOrders is null.
+
     setTableNumber(tempTableNumber.trim());
     setIsTableNumberDialogOpen(false);
     toast.success(`Table number set to: ${tempTableNumber.trim()}`);
   };
 
   const handleAddToCart = (productId: string, productName: string, productPrice: number) => {
-    if (!tableNumber.trim() && !isUpdateMode) { // Don't require if in update mode as table is pre-set
+    if (!tableNumber.trim() && !isUpdateMode) { 
       toast.error("Please set a table number before adding items.");
       handleOpenTableNumberDialog(); 
       return;
@@ -140,7 +179,6 @@ const NewOrder = () => {
 
   const handleSubmitOrder = async () => {
     if (!tableNumber.trim()) {
-      // This case should ideally not be hit if logic is correct, but as a safeguard:
       toast.error("Please ensure a table number is set.");
       if(!isUpdateMode) handleOpenTableNumberDialog();
       return;
@@ -170,6 +208,19 @@ const NewOrder = () => {
         navigate('/active-orders');
       }
     } else {
+      // Double-check for active order on the table before placing a new order,
+      // in case the user managed to bypass the dialog check or data changed.
+      if (activeOrders) {
+        const existingActiveOrder = activeOrders.find(
+          (order) => order.tableNumber === tableNumber.trim() && order.status !== 'COMPLETED'
+        );
+        if (existingActiveOrder) {
+          toast.error(`Table ${tableNumber.trim()} already has an active order. Cannot place a new order.`);
+          handleOpenTableNumberDialog(); // Re-open dialog to select different table.
+          return;
+        }
+      }
+
       const orderData = {
         tableNumber: tableNumber.trim(),
         orderItemDtos: orderItemDtos,
@@ -177,19 +228,27 @@ const NewOrder = () => {
       success = await orderService.createOrder(orderData);
       if (success) {
         setCart([]);
-        // Table number is kept for new orders. If it should reset: setTableNumber(""); setTempTableNumber("");
-        // For new orders, maybe navigate to active orders or dashboard too?
-        // For now, just clears cart.
-        queryClient.invalidateQueries({ queryKey: ['activeOrders'] }); // Invalidate to reflect new order too
+        queryClient.invalidateQueries({ queryKey: ['activeOrders'] }); 
+        // Keep table number for potential next order on same table, or clear if desired:
+        // setTableNumber(""); 
+        // setTempTableNumber("");
+        // Optionally navigate away, e.g., to active orders or dashboard
+        // navigate('/active-orders'); 
       }
     }
   };
 
   const handleCancelOrder = () => {
     setCart([]);
-    if (!isUpdateMode) { // Only clear table number if it's a truly new order being cancelled
-        setTableNumber("");
-        setTempTableNumber("");
+    if (!isUpdateMode) { 
+        // Only reset table if it was a truly new order attempt.
+        // If a table number was set and an attempt to add items was made,
+        // then cancelling should probably keep the table number for a retry,
+        // or navigate back to dashboard where table can be re-chosen.
+        // For now, let's keep it, as user might want to try different items for the same table.
+        // If they want to change table, they can click "(Change)" or back out.
+        // setTableNumber("");
+        // setTempTableNumber("");
     }
     toast.info(isUpdateMode ? "Changes discarded." : "Order cancelled.");
     navigate(isUpdateMode ? '/active-orders' : '/dashboard');
@@ -230,8 +289,9 @@ const NewOrder = () => {
         <div className="flex flex-col md:flex-row gap-6">
           <Card className="flex-1">
             <CardContent className="pt-6">
-              {/* Table number selection UI shown only if not in update mode and no table number set */}
-              {!isUpdateMode && !tableNumber.trim() && (
+              {/* Table number selection UI shown only if not in update mode and no table number set
+                  AND dialog is not open (to avoid redundant display) */}
+              {!isUpdateMode && !tableNumber.trim() && !isTableNumberDialogOpen && (
                 <div className="text-center py-10 text-muted-foreground">
                   <p className="mb-4">Please select a table number to start adding products.</p>
                   <Button onClick={handleOpenTableNumberDialog}>
@@ -240,12 +300,15 @@ const NewOrder = () => {
                 </div>
               )}
               
-              {isLoading && !menuItems && (tableNumber.trim() || isUpdateMode) && (
+              {/* Loading state for menu items */}
+              {isLoadingMenu && !menuItems && (tableNumber.trim() || isUpdateMode) && (
                 <div className="flex justify-center items-center h-40">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="ml-2">Loading menu...</p>
                 </div>
               )}
 
+              {/* Display products if table set (or update mode) and menu loaded */}
               {(tableNumber.trim() || isUpdateMode) && menuItems && productsByCategory && (
                 <div className="space-y-8">
                   {orderedCategories.map(category => (
@@ -265,7 +328,9 @@ const NewOrder = () => {
                                     size="sm" 
                                     variant="outline"
                                     onClick={() => handleAddToCart(item.id, item.name, item.price)}
-                                    disabled={!tableNumber.trim() && !isUpdateMode}
+                                    // Disable if table not set (and not update mode)
+                                    // OR if menu is still loading
+                                    disabled={(!tableNumber.trim() && !isUpdateMode) || isLoadingMenu}
                                   >
                                     <PlusCircle className="h-4 w-4 mr-1" />
                                     Add
@@ -292,15 +357,16 @@ const NewOrder = () => {
                         onClick={handleOpenTableNumberDialog} 
                         variant="link" 
                         className="text-sm p-0 h-auto"
-                        disabled={isUpdateMode} // Disable changing table in update mode
+                        disabled={isUpdateMode || isLoadingActiveOrders} 
                     >
-                        Table: {tableNumber} {isUpdateMode ? "" : "(Change)"}
+                        Table: {tableNumber} {isUpdateMode ? "" : (!isLoadingActiveOrders && "(Change)")}
+                        {(!isUpdateMode && isLoadingActiveOrders) && <Loader2 className="ml-1 h-3 w-3 animate-spin" />}
                     </Button>
                  )}
               </div>
               
-              {/* Logic for empty cart/order display */}
-              {(!isUpdateMode && !tableNumber && cart.length === 0) && (
+              {/* Empty cart/order display logic */}
+              {(!isUpdateMode && !tableNumber && cart.length === 0 && !isTableNumberDialogOpen) && (
                  <p className="text-muted-foreground text-center py-8">Select a table to start your order.</p>
               )}
 
@@ -308,8 +374,8 @@ const NewOrder = () => {
                 <p className="text-muted-foreground text-center py-8">Your cart is empty</p>
               )}
               
+              {/* ... keep existing code (cart items display, total, and action buttons) */}
               {cart.length > 0 && (
-                // ... keep existing code (cart items display)
                 <div className="space-y-4 mb-6">
                   {cart.map((item, index) => (
                     <div key={index} className="flex justify-between items-start border-b pb-2">
@@ -345,7 +411,7 @@ const NewOrder = () => {
                 </div>
                 <Button 
                   className="w-full" 
-                  disabled={cart.length === 0 || (!tableNumber.trim() && !isUpdateMode)}
+                  disabled={cart.length === 0 || (!tableNumber.trim() && !isUpdateMode) || (!isUpdateMode && isLoadingActiveOrders)}
                   onClick={handleSubmitOrder}
                 >
                   {isUpdateMode ? "Update Order" : "Place Order"}
@@ -354,7 +420,6 @@ const NewOrder = () => {
                   className="w-full" 
                   variant="outline"
                   onClick={handleCancelOrder}
-                  // Disable if no cart and (not update mode AND no table number)
                   disabled={cart.length === 0 && ((!isUpdateMode && !tableNumber.trim()))}
                 >
                   <XCircle className="mr-2 h-4 w-4" />
@@ -415,7 +480,7 @@ const NewOrder = () => {
             <Dialog open={isTableNumberDialogOpen} onOpenChange={setIsTableNumberDialogOpen}>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>{tableNumber ? "Change Table Number" : "Set Table Number"}</DialogTitle>
+                    <DialogTitle>{tableNumber && !isTableNumberDialogOpen ? "Change Table Number" : "Set Table Number"}</DialogTitle>
                   </DialogHeader>
                   <div className="py-4">
                     <Input
@@ -430,7 +495,11 @@ const NewOrder = () => {
                     <Button variant="outline" onClick={() => setIsTableNumberDialogOpen(false)}>
                       Cancel
                     </Button>
-                    <Button onClick={handleConfirmTableNumber}>
+                    <Button 
+                      onClick={handleConfirmTableNumber} 
+                      disabled={isLoadingActiveOrders}
+                    >
+                      {isLoadingActiveOrders ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                       Confirm
                     </Button>
                   </DialogFooter>

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -25,14 +24,13 @@ const CompletedOrders: React.FC = () => {
   const navigate = useNavigate();
 
   const { data: menuItems, isLoading: isLoadingMenu, error: menuError } = useQuery({
-    queryKey: ['menuItems'], // Reuse menu items query
+    queryKey: ['menuItems'], 
     queryFn: menuService.getMenuItems,
   });
 
-  // Fetch all orders, filtering will happen client-side
   const { data: allOrders, isLoading: isLoadingOrders, error: ordersError } = useQuery({
-    queryKey: ['completedOrdersData'], // Unique queryKey for this page's data
-    queryFn: orderService.getActiveOrders, // Reusing the same fetch function
+    queryKey: ['completedOrdersData'], 
+    queryFn: orderService.getActiveOrders, 
   });
 
   const [enrichedCompletedOrdersByTable, setEnrichedCompletedOrdersByTable] = useState<Record<string, EnrichedOrder[]>>({});
@@ -41,7 +39,6 @@ const CompletedOrders: React.FC = () => {
     if (allOrders && menuItems) {
       const productMap = new Map(menuItems.map(item => [String(item.id), item.name]));
       
-      // Filter for COMPLETED orders
       const completedOrders = allOrders.filter(order => order.status === 'COMPLETED');
       
       const ordersWithProductNames = completedOrders.map(order => ({
@@ -58,11 +55,10 @@ const CompletedOrders: React.FC = () => {
         if (!groupedByTable[order.tableNumber]) {
           groupedByTable[order.tableNumber] = [];
         }
-        // To display orders somewhat chronologically within a table, sort by createdAt if available
         groupedByTable[order.tableNumber].push(order);
         groupedByTable[order.tableNumber].sort((a, b) => {
             if (a.createdAt && b.createdAt) {
-                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(); // Most recent first
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(); 
             }
             return 0;
         });
@@ -78,11 +74,8 @@ const CompletedOrders: React.FC = () => {
   
   const getOrderDate = (tableNumber: string): string | null => {
     if (!enrichedCompletedOrdersByTable[tableNumber] || enrichedCompletedOrdersByTable[tableNumber].length === 0) return null;
-    // Assuming all orders for a table in this view are completed around the same time, 
-    // or we take the latest completed order's date for that table grouping.
-    // For simplicity, taking the first one after sorting (which should be the latest if sorted by createdAt descending).
     const order = enrichedCompletedOrdersByTable[tableNumber][0];
-    return order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "Date N/A";
+    return order.createdAt ? new Date(order.createdAt).toLocaleDateString() : null;
   }
 
 
@@ -110,7 +103,6 @@ const CompletedOrders: React.FC = () => {
   }
   
   const tableNumbers = Object.keys(enrichedCompletedOrdersByTable).sort((a, b) => {
-    // Sort tables by the latest order date within them, if possible
     const dateA = enrichedCompletedOrdersByTable[a][0]?.createdAt;
     const dateB = enrichedCompletedOrdersByTable[b][0]?.createdAt;
     if (dateA && dateB) {
@@ -174,4 +166,3 @@ const CompletedOrders: React.FC = () => {
 };
 
 export default CompletedOrders;
-
