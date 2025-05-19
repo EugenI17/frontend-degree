@@ -1,6 +1,6 @@
 
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster as SonnerToaster } from "@/components/ui/sonner"; // Renamed to avoid conflict
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -10,7 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import MenuManagement from "./pages/MenuManagement";
 import StaffManagement from "./pages/StaffManagement";
 import NewOrder from "./pages/NewOrder";
-import ActiveOrders from "./pages/ActiveOrders"; // Import the new page
+import ActiveOrders from "./pages/ActiveOrders";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -21,7 +21,7 @@ const App = () => (
     <AuthProvider>
       <TooltipProvider>
         <Toaster />
-        <Sonner />
+        <SonnerToaster duration={300} /> {/* Set duration to 300ms */}
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Auth />} />
@@ -45,7 +45,7 @@ const App = () => (
                 <NewOrder />
               </ProtectedRoute>
             } />
-            <Route path="/active-orders" element={ // Add the new route
+            <Route path="/active-orders" element={
               <ProtectedRoute>
                 <ActiveOrders />
               </ProtectedRoute>

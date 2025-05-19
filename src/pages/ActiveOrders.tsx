@@ -105,12 +105,11 @@ const ActiveOrders: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-display font-bold text-restaurant-primary">Active Orders</h1>
-          <Button variant="outline" onClick={() => navigate('/dashboard')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Main Menu
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="outline" size="icon" onClick={() => navigate('/dashboard')}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
+          <h1 className="text-3xl font-display font-bold text-restaurant-primary">Active Orders</h1>
         </div>
         
         {tableNumbers.length === 0 && !isLoadingOrders ? (
