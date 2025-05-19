@@ -195,7 +195,7 @@ const NewOrder = () => {
     navigate(isUpdateMode ? '/active-orders' : '/dashboard');
   };
 
-  const orderedCategories: MenuItemType[] = useMemo(() => ["STARTER", "MAIN", "DESSERT"], []);
+  const orderedCategories: MenuItemType[] = useMemo(() => ["STARTER", "MAIN", "DESSERT", "DRINK"], []);
 
   const productsByCategory = useMemo(() => {
     if (!menuItems) return {};
