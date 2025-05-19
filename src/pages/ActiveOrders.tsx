@@ -1,11 +1,13 @@
 
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { orderService, Order } from '@/services/orderService';
-import { menuService, MenuItem } from '@/services/menuService';
+import { menuService } from '@/services/menuService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { useQuery } from '@tanstack/react-query';
-import { Loader } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Loader, ArrowLeft, PlusCircle } from 'lucide-react'; // Added ArrowLeft and PlusCircle
 
 interface EnrichedOrderItem extends Omit<Order['orderItemDtos'][0], 'productId'> {
   productName: string;
@@ -17,6 +19,9 @@ interface EnrichedOrder extends Omit<Order, 'orderItemDtos'> {
 }
 
 const ActiveOrders: React.FC = () => {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient(); // For potential refetch later
+
   const { data: menuItems, isLoading: isLoadingMenu, error: menuError } = useQuery({
     queryKey: ['menuItems'],
     queryFn: menuService.getMenuItems,
@@ -37,7 +42,7 @@ const ActiveOrders: React.FC = () => {
         ...order,
         orderItemDtos: order.orderItemDtos.map(item => ({
           ...item,
-          productId: String(item.productId), // Ensure productId is string for lookup
+          productId: String(item.productId),
           productName: productMap.get(String(item.productId)) || `Unknown Product (ID: ${item.productId})`,
         })),
       }));
@@ -52,6 +57,21 @@ const ActiveOrders: React.FC = () => {
       setEnrichedOrdersByTable(groupedByTable);
     }
   }, [activeOrders, menuItems]);
+
+  const handleAddProducts = (tableNumber: string) => {
+    navigate('/new-order', { state: { tableNumber, existingOrderItems: getAllItemsForTable(tableNumber) } });
+  };
+
+  const handleCompleteOrder = (tableNumber: string) => {
+    // Functionality to be added later
+    console.log(`Complete order for table ${tableNumber}`);
+  };
+
+  const getAllItemsForTable = (tableNumber: string): EnrichedOrderItem[] => {
+    if (!enrichedOrdersByTable[tableNumber]) return [];
+    return enrichedOrdersByTable[tableNumber].flatMap(order => order.orderItemDtos);
+  };
+
 
   if (isLoadingMenu || isLoadingOrders) {
     return (
@@ -81,25 +101,33 @@ const ActiveOrders: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <h1 className="text-3xl font-display font-bold text-restaurant-primary">Active Orders</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-display font-bold text-restaurant-primary">Active Orders</h1>
+          <Button variant="outline" onClick={() => navigate('/dashboard')}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Main Menu
+          </Button>
+        </div>
+        
         {tableNumbers.length === 0 ? (
           <p>No active orders at the moment.</p>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {tableNumbers.map(tableNumber => (
-              <Card key={tableNumber} className="flex flex-col">
-                <CardHeader>
-                  <CardTitle>Table {tableNumber}</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-grow space-y-4">
-                  {enrichedOrdersByTable[tableNumber].map((order, orderIndex) => (
-                    <div key={order.id || `order-${orderIndex}`} className="border-t pt-2 mt-2 first:border-t-0 first:mt-0 first:pt-0">
-                      <CardDescription className="font-semibold mb-1">
-                        Order {orderIndex + 1} {order.status && `(${order.status})`}
-                      </CardDescription>
+            {tableNumbers.map(tableNumber => {
+              const allItemsForThisTable = getAllItemsForTable(tableNumber);
+              return (
+                <Card key={tableNumber} className="flex flex-col">
+                  <CardHeader>
+                    <CardTitle>Table {tableNumber}</CardTitle>
+                    {enrichedOrdersByTable[tableNumber][0]?.status && (
+                        <CardDescription>Status: {enrichedOrdersByTable[tableNumber][0].status}</CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent className="flex-grow space-y-2">
+                    {allItemsForThisTable.length > 0 ? (
                       <ul className="list-disc list-inside text-sm space-y-1">
-                        {order.orderItemDtos.map((item, itemIndex) => (
-                          <li key={`${item.productId}-${itemIndex}`}>
+                        {allItemsForThisTable.map((item, itemIndex) => (
+                          <li key={`${item.productId}-${itemIndex}-${tableNumber}`}>
                             {item.productName}
                             {item.extra && <span className="text-xs text-gray-500"> (Extra: {item.extra})</span>}
                             {item.fara && <span className="text-xs text-gray-500"> (Without: {item.fara})</span>}
@@ -107,11 +135,32 @@ const ActiveOrders: React.FC = () => {
                           </li>
                         ))}
                       </ul>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            ))}
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No items for this table yet.</p>
+                    )}
+                  </CardContent>
+                  <div className="p-4 border-t flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => handleAddProducts(tableNumber)}
+                    >
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Add Products
+                    </Button>
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => handleCompleteOrder(tableNumber)}
+                    >
+                      Complete Order
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>

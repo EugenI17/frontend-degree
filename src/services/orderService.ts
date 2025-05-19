@@ -1,20 +1,27 @@
+
 import { toast } from "sonner";
 import { api } from "./api";
 import { MenuItem } from "./menuService";
 
 export interface OrderItem {
-  productId: string; // Changed from number to string to match API response example
+  productId: string; 
   extra?: string | null;
-  fara?: string | null; // Renamed from "without" to match common usage, adjust if API expects "without"
+  fara?: string | null; 
   specification?: string | null;
 }
 
 export interface Order {
-  id?: string; // Assuming orders might have an ID from the backend
+  id?: string; 
   tableNumber: string;
   orderItemDtos: OrderItem[];
-  status?: string; // Example: PENDING, PREPARING, READY, DELIVERED
-  createdAt?: string; // Timestamp
+  status?: string; 
+  createdAt?: string; 
+}
+
+// New payload type for updating an order
+export interface UpdateOrderPayload {
+  tableNumber: string;
+  orderItemDtos: OrderItem[];
 }
 
 export const orderService = {
@@ -61,7 +68,6 @@ export const orderService = {
 
       if (response.ok) {
         const data = await response.json();
-        // Ensure data is always an array
         return Array.isArray(data) ? data : [];
       } else {
         const errorText = await response.text();
@@ -73,6 +79,36 @@ export const orderService = {
       console.error("Error fetching active orders:", error);
       toast.error("Failed to fetch active orders");
       return [];
+    }
+  },
+
+  // New function to update an order
+  async updateOrder(payload: UpdateOrderPayload): Promise<boolean> {
+    try {
+      const response = await api.fetchWithTokenRefresh(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8081'}/api/order/update`, 
+        {
+          method: 'POST', // As per user instruction, though typically updates are PUT/PATCH
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (response.ok) {
+        toast.success("Order updated successfully");
+        return true;
+      } else {
+        const errorText = await response.text();
+        console.error("Failed to update order:", response.status, errorText);
+        toast.error(`Failed to update order (${response.status})`);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error updating order:", error);
+      toast.error("Failed to update order");
+      return false;
     }
   }
 };

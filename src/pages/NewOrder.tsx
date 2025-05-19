@@ -1,16 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { menuService, MenuItem, MenuItemType } from "@/services/menuService";
-import { orderService, OrderItem } from "@/services/orderService";
+import { orderService, OrderItem, UpdateOrderPayload } from "@/services/orderService";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2, PlusCircle, Trash2, XCircle, ArrowLeft } from "lucide-react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MultiSelectPopover } from "@/components/ui/MultiSelectPopover"; // Import the new component
+import { MultiSelectPopover } from "@/components/ui/MultiSelectPopover";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
 interface CartItem extends OrderItem {
@@ -22,6 +22,10 @@ interface CartItem extends OrderItem {
 }
 
 const NewOrder = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+
   const [tableNumber, setTableNumber] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
@@ -34,13 +38,25 @@ const NewOrder = () => {
 
   const [isTableNumberDialogOpen, setIsTableNumberDialogOpen] = useState(false);
   const [tempTableNumber, setTempTableNumber] = useState("");
-  const navigate = useNavigate();
+
+  const [isUpdateMode, setIsUpdateMode] = useState(false);
 
   // Fetch menu items
   const { data: menuItems, isLoading } = useQuery({
     queryKey: ['menuItems'],
     queryFn: menuService.getMenuItems,
   });
+
+  useEffect(() => {
+    if (location.state?.tableNumber) {
+      const passedTableNumber = String(location.state.tableNumber);
+      setTableNumber(passedTableNumber);
+      setTempTableNumber(passedTableNumber); // Sync tempTableNumber as well
+      setIsUpdateMode(true);
+      // Do not open table dialog if tableNumber is passed
+      setIsTableNumberDialogOpen(false); 
+    }
+  }, [location.state]);
 
   // Update selected product ingredients when dialog opens or product changes
   useEffect(() => {
@@ -57,6 +73,10 @@ const NewOrder = () => {
   }, [isAddingProduct, currentProductId, menuItems]);
 
   const handleOpenTableNumberDialog = () => {
+    if (isUpdateMode) {
+        toast.info("Table number is fixed when adding to an existing order.");
+        return;
+    }
     setTempTableNumber(tableNumber);
     setIsTableNumberDialogOpen(true);
   };
@@ -72,9 +92,9 @@ const NewOrder = () => {
   };
 
   const handleAddToCart = (productId: string, productName: string, productPrice: number) => {
-    if (!tableNumber.trim()) {
+    if (!tableNumber.trim() && !isUpdateMode) { // Don't require if in update mode as table is pre-set
       toast.error("Please set a table number before adding items.");
-      handleOpenTableNumberDialog(); // Prompt to set table number
+      handleOpenTableNumberDialog(); 
       return;
     }
     setCurrentProductId(productId);
@@ -118,10 +138,11 @@ const NewOrder = () => {
     return cart.reduce((total, item) => total + item.product.price, 0);
   };
 
-  const placeOrder = async () => {
+  const handleSubmitOrder = async () => {
     if (!tableNumber.trim()) {
-      toast.error("Please enter a table number");
-      handleOpenTableNumberDialog();
+      // This case should ideally not be hit if logic is correct, but as a safeguard:
+      toast.error("Please ensure a table number is set.");
+      if(!isUpdateMode) handleOpenTableNumberDialog();
       return;
     }
 
@@ -130,29 +151,48 @@ const NewOrder = () => {
       return;
     }
 
-    const orderData = {
-      tableNumber: tableNumber.trim(),
-      orderItemDtos: cart.map(item => ({
+    const orderItemDtos = cart.map(item => ({
         productId: item.productId,
         extra: item.extra,
         fara: item.fara,
         specification: item.specification
-      }))
-    };
+      }));
 
-    const success = await orderService.createOrder(orderData);
-    if (success) {
-      setCart([]);
-      // Table number is kept based on user flow. If it should reset, add: setTableNumber(""); setTempTableNumber("");
+    let success = false;
+    if (isUpdateMode) {
+      const updatePayload: UpdateOrderPayload = {
+        tableNumber: tableNumber.trim(),
+        orderItemDtos: orderItemDtos
+      };
+      success = await orderService.updateOrder(updatePayload);
+      if (success) {
+        queryClient.invalidateQueries({ queryKey: ['activeOrders'] });
+        navigate('/active-orders');
+      }
+    } else {
+      const orderData = {
+        tableNumber: tableNumber.trim(),
+        orderItemDtos: orderItemDtos,
+      };
+      success = await orderService.createOrder(orderData);
+      if (success) {
+        setCart([]);
+        // Table number is kept for new orders. If it should reset: setTableNumber(""); setTempTableNumber("");
+        // For new orders, maybe navigate to active orders or dashboard too?
+        // For now, just clears cart.
+        queryClient.invalidateQueries({ queryKey: ['activeOrders'] }); // Invalidate to reflect new order too
+      }
     }
   };
 
   const handleCancelOrder = () => {
     setCart([]);
-    setTableNumber("");
-    setTempTableNumber("");
-    toast.info("Order cancelled.");
-    navigate('/dashboard');
+    if (!isUpdateMode) { // Only clear table number if it's a truly new order being cancelled
+        setTableNumber("");
+        setTempTableNumber("");
+    }
+    toast.info(isUpdateMode ? "Changes discarded." : "Order cancelled.");
+    navigate(isUpdateMode ? '/active-orders' : '/dashboard');
   };
 
   const orderedCategories: MenuItemType[] = useMemo(() => ["STARTER", "MAIN", "DESSERT"], []);
@@ -175,18 +215,23 @@ const NewOrder = () => {
       <div className="container mx-auto py-6">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
-            <Button onClick={() => navigate('/dashboard')} variant="outline" size="icon">
+            <Button 
+              onClick={() => navigate(isUpdateMode ? '/active-orders' : '/dashboard')} 
+              variant="outline" 
+              size="icon"
+            >
               <ArrowLeft className="h-4 w-4" />
-              <span className="sr-only">Back to Main Menu</span>
+              <span className="sr-only">Back</span>
             </Button>
-            <h1 className="text-2xl font-bold">New Order</h1>
+            <h1 className="text-2xl font-bold">{isUpdateMode ? `Add to Table ${tableNumber}` : 'New Order'}</h1>
           </div>
         </div>
         
         <div className="flex flex-col md:flex-row gap-6">
           <Card className="flex-1">
             <CardContent className="pt-6">
-              {!tableNumber.trim() && (
+              {/* Table number selection UI shown only if not in update mode and no table number set */}
+              {!isUpdateMode && !tableNumber.trim() && (
                 <div className="text-center py-10 text-muted-foreground">
                   <p className="mb-4">Please select a table number to start adding products.</p>
                   <Button onClick={handleOpenTableNumberDialog}>
@@ -195,13 +240,13 @@ const NewOrder = () => {
                 </div>
               )}
               
-              {isLoading && !menuItems && tableNumber.trim() && (
+              {isLoading && !menuItems && (tableNumber.trim() || isUpdateMode) && (
                 <div className="flex justify-center items-center h-40">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               )}
 
-              {tableNumber.trim() && menuItems && productsByCategory && (
+              {(tableNumber.trim() || isUpdateMode) && menuItems && productsByCategory && (
                 <div className="space-y-8">
                   {orderedCategories.map(category => (
                     productsByCategory[category] && productsByCategory[category].length > 0 && (
@@ -220,7 +265,7 @@ const NewOrder = () => {
                                     size="sm" 
                                     variant="outline"
                                     onClick={() => handleAddToCart(item.id, item.name, item.price)}
-                                    disabled={!tableNumber.trim()}
+                                    disabled={!tableNumber.trim() && !isUpdateMode}
                                   >
                                     <PlusCircle className="h-4 w-4 mr-1" />
                                     Add
@@ -241,23 +286,30 @@ const NewOrder = () => {
           <Card className="w-full md:w-1/3">
             <CardContent className="pt-6">
               <div className="flex justify-between items-center mb-4">
-                 <h2 className="text-xl font-bold">Order Summary</h2>
+                 <h2 className="text-xl font-bold">{isUpdateMode ? "Items to Add" : "Order Summary"}</h2>
                  {tableNumber && (
-                    <Button onClick={handleOpenTableNumberDialog} variant="link" className="text-sm p-0 h-auto">
-                        Table: {tableNumber} (Change)
+                    <Button 
+                        onClick={handleOpenTableNumberDialog} 
+                        variant="link" 
+                        className="text-sm p-0 h-auto"
+                        disabled={isUpdateMode} // Disable changing table in update mode
+                    >
+                        Table: {tableNumber} {isUpdateMode ? "" : "(Change)"}
                     </Button>
                  )}
               </div>
               
-              {!tableNumber && cart.length === 0 && (
+              {/* Logic for empty cart/order display */}
+              {(!isUpdateMode && !tableNumber && cart.length === 0) && (
                  <p className="text-muted-foreground text-center py-8">Select a table to start your order.</p>
               )}
 
-              {tableNumber && cart.length === 0 && (
+              {(tableNumber || isUpdateMode) && cart.length === 0 && (
                 <p className="text-muted-foreground text-center py-8">Your cart is empty</p>
               )}
               
               {cart.length > 0 && (
+                // ... keep existing code (cart items display)
                 <div className="space-y-4 mb-6">
                   {cart.map((item, index) => (
                     <div key={index} className="flex justify-between items-start border-b pb-2">
@@ -288,30 +340,32 @@ const NewOrder = () => {
               
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between font-bold">
-                  <span>Total:</span>
+                  <span>Total for these items:</span>
                   <span>{calculateTotal().toFixed(2)} RON</span>
                 </div>
                 <Button 
                   className="w-full" 
-                  disabled={cart.length === 0 || !tableNumber.trim()}
-                  onClick={placeOrder}
+                  disabled={cart.length === 0 || (!tableNumber.trim() && !isUpdateMode)}
+                  onClick={handleSubmitOrder}
                 >
-                  Place Order
+                  {isUpdateMode ? "Update Order" : "Place Order"}
                 </Button>
                 <Button 
                   className="w-full" 
                   variant="outline"
                   onClick={handleCancelOrder}
-                  disabled={cart.length === 0 && !tableNumber.trim()}
+                  // Disable if no cart and (not update mode AND no table number)
+                  disabled={cart.length === 0 && ((!isUpdateMode && !tableNumber.trim()))}
                 >
                   <XCircle className="mr-2 h-4 w-4" />
-                  Cancel Order
+                   {isUpdateMode ? "Cancel Changes" : "Cancel Order"}
                 </Button>
               </div>
             </CardContent>
           </Card>
         </div>
 
+        {/* Add Item Dialog */}
         <Dialog open={isAddingProduct} onOpenChange={setIsAddingProduct}>
           <DialogContent>
             <DialogHeader>
@@ -356,30 +410,33 @@ const NewOrder = () => {
           </DialogContent>
         </Dialog>
 
-        <Dialog open={isTableNumberDialogOpen} onOpenChange={setIsTableNumberDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{tableNumber ? "Change Table Number" : "Set Table Number"}</DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
-              <Input
-                type="text"
-                placeholder="Enter Table Number"
-                value={tempTableNumber}
-                onChange={(e) => setTempTableNumber(e.target.value)}
-                autoFocus
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsTableNumberDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleConfirmTableNumber}>
-                Confirm
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Table Number Dialog (only shown if not updateMode) */}
+        {!isUpdateMode && (
+            <Dialog open={isTableNumberDialogOpen} onOpenChange={setIsTableNumberDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{tableNumber ? "Change Table Number" : "Set Table Number"}</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <Input
+                      type="text"
+                      placeholder="Enter Table Number"
+                      value={tempTableNumber}
+                      onChange={(e) => setTempTableNumber(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsTableNumberDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleConfirmTableNumber}>
+                      Confirm
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        )}
       </div>
     </DashboardLayout>
   );
