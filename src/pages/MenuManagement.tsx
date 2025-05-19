@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
@@ -210,7 +209,7 @@ const MenuManagement: React.FC = () => {
                           <TableCell>
                             <Badge className={getTypeColor(item.type)}>{item.type}</Badge>
                           </TableCell>
-                          <TableCell>{item.price.toFixed(2)} Lei</TableCell>
+                          <TableCell>{item.price.toFixed(2)} RON</TableCell>
                           <TableCell>
                             {item.ingredients.length > 0 
                               ? item.ingredients.join(", ") 
@@ -248,7 +247,6 @@ const MenuManagement: React.FC = () => {
         </Card>
       </div>
 
-      {/* Edit Product Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -265,7 +263,6 @@ const MenuManagement: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,7 +53,7 @@ const EditProductForm: React.FC<EditProductFormProps> = ({ product: initialProdu
       </div>
 
       <div>
-        <Label htmlFor="price">Price (Lei)</Label>
+        <Label htmlFor="price">Price (RON)</Label>
         <Input
           id="price"
           type="number"

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,7 +57,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ onSubmit, isSubmitting }) => 
       </div>
 
       <div>
-        <Label htmlFor="price">Price (Lei)</Label>
+        <Label htmlFor="price">Price (RON)</Label>
         <Input
           id="price"
           type="number"
