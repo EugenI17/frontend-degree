@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { menuService } from "@/services/menuService";
+import { menuService, MenuItem as ProductMenuItem } from "@/services/menuService";
 import { orderService, OrderItem } from "@/services/orderService";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,12 +11,15 @@ import { toast } from "sonner";
 import { Loader2, PlusCircle, Trash2, XCircle, ArrowLeft } from "lucide-react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface CartItem extends OrderItem {
   product: {
     id: string;
     name: string;
     price: number;
+    ingredients?: string[]; // Make ingredients optional as it might not always be used or fetched for cart display
   };
 }
 
@@ -54,11 +57,16 @@ const NewOrder = () => {
     toast.success(`Table number set to: ${tempTableNumber.trim()}`);
   };
 
-  const handleAddToCart = (productId: string, productName: string, productPrice: number) => {
+  const handleAddToCart = (productId: string) => {
     if (!tableNumber.trim()) {
       toast.error("Please set a table number before adding items.");
-      handleOpenTableNumberDialog(); // Prompt to set table number
+      handleOpenTableNumberDialog();
       return;
+    }
+    const productToAdd = menuItems?.find(item => item.id === productId);
+    if (!productToAdd) {
+        toast.error("Product not found.");
+        return;
     }
     setCurrentProductId(productId);
     setSpecification("");
@@ -78,7 +86,8 @@ const NewOrder = () => {
       product: {
         id: currentProductId,
         name: selectedProduct.name,
-        price: selectedProduct.price
+        price: selectedProduct.price,
+        ingredients: selectedProduct.ingredients // Store ingredients if needed for display, though not strictly necessary for order creation
       }
     };
     
@@ -126,18 +135,22 @@ const NewOrder = () => {
     const success = await orderService.createOrder(orderData);
     if (success) {
       setCart([]);
-      setTableNumber(""); 
-      setTempTableNumber("");
+      // Keep tableNumber, user might want to place another order for the same table
+      // setTableNumber(""); 
+      // setTempTableNumber("");
     }
   };
 
   const handleCancelOrder = () => {
     setCart([]);
-    setTableNumber("");
-    setTempTableNumber("");
+    // Keep tableNumber as per previous behaviour or reset if desired
+    // setTableNumber("");
+    // setTempTableNumber("");
     toast.info("Order cancelled.");
-    navigate('/dashboard');
+    navigate('/dashboard'); // Navigate to main menu (dashboard)
   };
+
+  const currentProductDetails = menuItems?.find(item => item.id === currentProductId);
 
   return (
     <DashboardLayout>
@@ -185,7 +198,7 @@ const NewOrder = () => {
                           <Button 
                             size="sm" 
                             variant="outline"
-                            onClick={() => handleAddToCart(item.id, item.name, item.price)}
+                            onClick={() => handleAddToCart(item.id)}
                             disabled={!tableNumber.trim()}
                           >
                             <PlusCircle className="h-4 w-4 mr-1" />
@@ -279,28 +292,45 @@ const NewOrder = () => {
         <Dialog open={isAddingProduct} onOpenChange={setIsAddingProduct}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add Item to Order</DialogTitle>
+              <DialogTitle>Add {currentProductDetails?.name || 'Item'} to Order</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Extra</label>
-                <Input 
-                  placeholder="Extra ingredients or modifications" 
-                  value={extra}
-                  onChange={(e) => setExtra(e.target.value)}
-                />
+                <Label htmlFor="extra-ingredient" className="text-sm font-medium">Extra</Label>
+                <Select value={extra} onValueChange={setExtra}>
+                  <SelectTrigger id="extra-ingredient">
+                    <SelectValue placeholder="Select extra ingredient" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {currentProductDetails?.ingredients?.map((ingredient) => (
+                      <SelectItem key={`extra-${ingredient}`} value={ingredient}>
+                        {ingredient}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Without</label>
-                <Input 
-                  placeholder="Items to exclude" 
-                  value={fara}
-                  onChange={(e) => setFara(e.target.value)}
-                />
+                <Label htmlFor="fara-ingredient" className="text-sm font-medium">Without</Label>
+                <Select value={fara} onValueChange={setFara}>
+                  <SelectTrigger id="fara-ingredient">
+                    <SelectValue placeholder="Select ingredient to exclude" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {currentProductDetails?.ingredients?.map((ingredient) => (
+                      <SelectItem key={`fara-${ingredient}`} value={ingredient}>
+                        {ingredient}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Special Instructions</label>
+                <Label htmlFor="specification" className="text-sm font-medium">Special Instructions</Label>
                 <Textarea 
+                  id="specification"
                   placeholder="Any specific instructions" 
                   value={specification}
                   onChange={(e) => setSpecification(e.target.value)}
