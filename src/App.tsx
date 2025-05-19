@@ -22,7 +22,7 @@ const App = () => (
     <AuthProvider>
       <TooltipProvider>
         <Toaster />
-        <SonnerToaster duration={800} /> {/* Changed duration from 300ms to 800ms */}
+        <SonnerToaster duration={1500} /> {/* Changed duration from 800ms to 1500ms */}
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Auth />} />
@@ -65,4 +65,3 @@ const App = () => (
 );
 
 export default App;
-

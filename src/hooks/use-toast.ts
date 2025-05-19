@@ -1,4 +1,3 @@
-
 import * as React from "react"
 
 import type {
@@ -7,7 +6,7 @@ import type {
 } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 800 // Changed from 300ms to 800ms
+const TOAST_REMOVE_DELAY = 1500 // Changed from 800ms to 1500ms
 
 type ToasterToast = ToastProps & {
   id: string
@@ -189,4 +188,3 @@ function useToast() {
 }
 
 export { useToast, toast }
-
