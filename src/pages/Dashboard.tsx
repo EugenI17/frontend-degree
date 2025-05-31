@@ -19,21 +19,23 @@ const Dashboard: React.FC = () => {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {userType === 'admin' && (
             <>
-              <Card className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <CardTitle>Manage Menu</CardTitle>
-                  <CardDescription>Add, edit or remove menu items</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="mb-4">Organize your TapNServe offerings by categories and manage prices.</p>
-                  <Link 
-                    to="/menu" 
-                    className="text-restaurant-primary hover:underline font-medium"
-                  >
-                    Open Menu Management →
-                  </Link>
-                </CardContent>
-              </Card>
+              <div className="md:col-start-1 lg:col-start-2">
+                <Card className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <CardTitle>Manage Menu</CardTitle>
+                    <CardDescription>Add, edit or remove menu items</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="mb-4">Organize your TapNServe offerings by categories and manage prices.</p>
+                    <Link 
+                      to="/menu" 
+                      className="text-restaurant-primary hover:underline font-medium"
+                    >
+                      Open Menu Management →
+                    </Link>
+                  </CardContent>
+                </Card>
+              </div>
               
               <Card className="hover:shadow-md transition-shadow">
                 <CardHeader>
@@ -48,17 +50,6 @@ const Dashboard: React.FC = () => {
                   >
                     Open Staff Management →
                   </Link>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sales Reports</CardTitle>
-                  <CardDescription>View financial data</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p>Monitor daily, weekly and monthly sales performance.</p>
-                  {/* Link to Sales Reports page can be added here later */}
                 </CardContent>
               </Card>
             </>
@@ -125,4 +116,3 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
-
