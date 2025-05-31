@@ -140,7 +140,7 @@ const ActiveOrders: React.FC = () => {
                             <li key={`${item.productId}-${itemIndex}-${tableNumber}`}>
                               {item.productName}
                               {item.extra && <span className="text-xs text-gray-500"> (Extra: {item.extra})</span>}
-                              {item.fara && <span className="text-xs text-gray-500"> (Without: {item.fara})</span>}
+                              {item.without && <span className="text-xs text-gray-500"> (Without: {item.without})</span>}
                               {item.specification && <span className="text-xs text-gray-500"> (Notes: {item.specification})</span>}
                             </li>
                           ))}
