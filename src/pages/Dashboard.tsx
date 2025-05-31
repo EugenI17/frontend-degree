@@ -51,14 +51,19 @@ const Dashboard: React.FC = () => {
                 </CardContent>
               </Card>
               
-              <Card>
+              <Card className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <CardTitle>Sales Reports</CardTitle>
-                  <CardDescription>View financial data</CardDescription>
+                  <CardDescription>View product performance</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p>Monitor daily, weekly and monthly sales performance.</p>
-                  {/* Link to Sales Reports page can be added here later */}
+                  <p className="mb-4">See what products perform best and analyze purchasing patterns.</p>
+                  <Link 
+                    to="/sales-reports" 
+                    className="text-restaurant-primary hover:underline font-medium"
+                  >
+                    View Sales Reports →
+                  </Link>
                 </CardContent>
               </Card>
             </>
@@ -125,4 +130,3 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
-

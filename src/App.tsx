@@ -11,7 +11,8 @@ import MenuManagement from "./pages/MenuManagement";
 import StaffManagement from "./pages/StaffManagement";
 import NewOrder from "./pages/NewOrder";
 import ActiveOrders from "./pages/ActiveOrders";
-import CompletedOrders from "./pages/CompletedOrders"; // Import the new page
+import CompletedOrders from "./pages/CompletedOrders";
+import SalesReports from "./pages/SalesReports";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -22,7 +23,7 @@ const App = () => (
     <AuthProvider>
       <TooltipProvider>
         <Toaster />
-        <SonnerToaster duration={1500} /> {/* Changed duration from 800ms to 1500ms */}
+        <SonnerToaster duration={1500} />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Auth />} />
@@ -41,6 +42,11 @@ const App = () => (
                 <StaffManagement />
               </ProtectedRoute>
             } />
+            <Route path="/sales-reports" element={
+              <ProtectedRoute requiredRole="admin">
+                <SalesReports />
+              </ProtectedRoute>
+            } />
             <Route path="/new-order" element={
               <ProtectedRoute>
                 <NewOrder />
@@ -51,7 +57,7 @@ const App = () => (
                 <ActiveOrders />
               </ProtectedRoute>
             } />
-            <Route path="/completed-orders" element={ // Add route for CompletedOrders
+            <Route path="/completed-orders" element={
               <ProtectedRoute>
                 <CompletedOrders />
               </ProtectedRoute>
