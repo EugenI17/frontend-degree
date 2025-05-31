@@ -94,7 +94,7 @@ const SalesReports: React.FC = () => {
                       <div className="flex flex-col">
                         <h3 className="font-semibold text-lg">{stat.product.name}</h3>
                         <p className="text-sm text-gray-600">
-                          {stat.product.type} • {stat.product.price} Lei
+                          {stat.product.type} • {stat.product.price} RON
                         </p>
                       </div>
                       <div className="text-right">
