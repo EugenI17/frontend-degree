@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 import { api } from "./api";
 import { MenuItem } from "./menuService";
@@ -5,7 +6,7 @@ import { MenuItem } from "./menuService";
 export interface OrderItem {
   productId: string; 
   extra?: string | null;
-  fara?: string | null; 
+  without?: string | null; // Changed from fara to without
   specification?: string | null;
 }
 

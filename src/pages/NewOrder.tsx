@@ -179,7 +179,7 @@ const NewOrder = () => {
     
     if (specification.trim()) newCartItem.specification = specification.trim();
     if (extra.length > 0) newCartItem.extra = extra.join(', '); 
-    if (fara.length > 0) newCartItem.fara = fara.join(', ');   
+    if (fara.length > 0) newCartItem.without = fara.join(', '); // Changed from fara to without
     
     setCart([...cart, newCartItem]);
     setIsAddingProduct(false);
@@ -211,7 +211,7 @@ const NewOrder = () => {
     const orderItemDtos = cart.map(item => ({
         productId: item.productId,
         extra: item.extra,
-        fara: item.fara,
+        without: item.without, // Changed from fara to without
         specification: item.specification
       }));
 
@@ -407,8 +407,8 @@ const NewOrder = () => {
                         {item.extra && (
                           <p className="text-xs">Extra: {item.extra}</p>
                         )}
-                        {item.fara && (
-                          <p className="text-xs">Without: {item.fara}</p>
+                        {item.without && (
+                          <p className="text-xs">Without: {item.without}</p>
                         )}
                       </div>
                       <Button 
