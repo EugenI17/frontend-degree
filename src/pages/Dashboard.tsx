@@ -13,7 +13,7 @@ const Dashboard: React.FC = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <h1 className="text-3xl font-display font-bold text-restaurant-primary">
-          {userType === 'admin' ? 'Admin Dashboard' : 'Employee Dashboard'}
+          {userType === 'admin' ? 'Admin Dashboard' : 'Order Dashboard'}
         </h1>
         
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
