@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -101,7 +100,7 @@ export default {
 			fontFamily: {
 				sans: ['Inter', 'sans-serif'],
 				display: ['Playfair Display', 'serif'],
-				bebas: ['Bebas Neue', 'sans-serif']
+				luckiest: ['Luckiest Guy', 'cursive']
 			}
 		}
 	},
