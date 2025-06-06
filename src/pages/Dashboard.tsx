@@ -25,7 +25,7 @@ const Dashboard: React.FC = () => {
                   <CardDescription>Add, edit or remove menu items</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="mb-4">Organize your TapNServe offerings by categories and manage prices.</p>
+                  <p className="mb-4">Organize your Tap2Serve offerings by categories and manage prices.</p>
                   <Link 
                     to="/menu" 
                     className="text-restaurant-primary hover:underline font-medium"

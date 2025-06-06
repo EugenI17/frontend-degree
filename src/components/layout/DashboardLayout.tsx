@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-4">
             <Menu className="h-6 w-6 md:hidden" />
-            <h1 className="font-display text-xl md:text-2xl">TapNServe</h1>
+            <h1 className="font-display text-xl md:text-2xl">Tap2Serve</h1>
           </div>
           
           <div className="flex items-center space-x-2">
@@ -74,7 +75,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       
       <footer className="bg-muted py-4 text-center text-sm text-muted-foreground">
         <div className="container mx-auto">
-          TapNServe &copy; {new Date().getFullYear()}
+          Tap2Serve &copy; {new Date().getFullYear()}
         </div>
       </footer>
     </div>
