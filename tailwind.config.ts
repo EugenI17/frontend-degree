@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -100,7 +101,8 @@ export default {
 			fontFamily: {
 				sans: ['Inter', 'sans-serif'],
 				display: ['Playfair Display', 'serif'],
-				hammersmith: ['Hammersmith One', 'sans-serif']
+				hammersmith: ['Hammersmith One', 'sans-serif'],
+				redhat: ['Red Hat Display', 'sans-serif']
 			}
 		}
 	},
