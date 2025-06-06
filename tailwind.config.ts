@@ -100,7 +100,8 @@ export default {
 			},
 			fontFamily: {
 				sans: ['Inter', 'sans-serif'],
-				display: ['Playfair Display', 'serif']
+				display: ['Playfair Display', 'serif'],
+				bebas: ['Bebas Neue', 'sans-serif']
 			}
 		}
 	},
