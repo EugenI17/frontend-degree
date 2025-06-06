@@ -22,7 +22,6 @@ const Auth: React.FC = () => {
       } catch (error) {
         console.error('Error checking setup status:', error);
         toast.error('Could not connect to server. Please check your connection and try again.');
-        // Default to login form if API is unavailable
         setSetupStatus({ initialSetupNeeded: false });
       } finally {
         setLoading(false);

@@ -43,7 +43,7 @@ export const userService = {
         throw new Error('Failed to create user');
       }
       
-      return await response.json();
+      return null;
     } catch (error) {
       console.error('Error creating user:', error);
       throw error;

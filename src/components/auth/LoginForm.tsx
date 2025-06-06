@@ -124,7 +124,7 @@ const LoginForm: React.FC = () => {
             </Button>
             
             <div className="text-xs text-center text-muted-foreground pt-2">
-              Powered by TapNServe
+              Powered by Tap2Serve
             </div>
           </form>
         </CardContent>
