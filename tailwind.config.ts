@@ -100,7 +100,7 @@ export default {
 			fontFamily: {
 				sans: ['Inter', 'sans-serif'],
 				display: ['Playfair Display', 'serif'],
-				luckiest: ['Luckiest Guy', 'cursive']
+				hammersmith: ['Hammersmith One', 'sans-serif']
 			}
 		}
 	},
