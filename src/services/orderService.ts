@@ -88,7 +88,7 @@ export const orderService = {
       const response = await api.fetchWithTokenRefresh(
         `${import.meta.env.VITE_API_URL || 'http://localhost:8081'}/api/order/update`, 
         {
-          method: 'POST', // As per user instruction, though typically updates are PUT/PATCH
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },

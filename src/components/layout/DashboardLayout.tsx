@@ -47,7 +47,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-4">
             <Menu className="h-6 w-6 md:hidden" />
-            <h1 className="font-redhat text-xl md:text-2xl tracking-wide">Tap2serve</h1>
+            <h1 className="font-redhat text-xl md:text-2xl tracking-wide">Tap2Serve</h1>
           </div>
           
           <div className="flex items-center space-x-2">

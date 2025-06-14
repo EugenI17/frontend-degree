@@ -41,7 +41,6 @@ const MenuManagement: React.FC = () => {
     queryFn: menuService.getMenuItems
   });
 
-  // Create menu item mutation
   const { mutate: createMenuItem, isPending: isCreating } = useMutation({
     mutationFn: menuService.createMenuItem,
     onSuccess: () => {
@@ -50,7 +49,6 @@ const MenuManagement: React.FC = () => {
     },
   });
 
-  // Update menu item mutation
   const { mutate: updateMenuItem, isPending: isUpdating } = useMutation({
     mutationFn: menuService.updateMenuItem,
     onSuccess: (success) => {
@@ -62,7 +60,6 @@ const MenuManagement: React.FC = () => {
     },
   });
 
-  // Delete menu item mutation
   const { mutate: deleteMenuItem, isPending: isDeleting } = useMutation({
     mutationFn: menuService.deleteMenuItem,
     onSuccess: (success) => {

@@ -179,7 +179,7 @@ const NewOrder = () => {
     
     if (specification.trim()) newCartItem.specification = specification.trim();
     if (extra.length > 0) newCartItem.extra = extra.join(', '); 
-    if (fara.length > 0) newCartItem.without = fara.join(', '); // Changed from fara to without
+    if (fara.length > 0) newCartItem.without = fara.join(', ');
     
     setCart([...cart, newCartItem]);
     setIsAddingProduct(false);
@@ -211,7 +211,7 @@ const NewOrder = () => {
     const orderItemDtos = cart.map(item => ({
         productId: item.productId,
         extra: item.extra,
-        without: item.without, // Changed from fara to without
+        without: item.without,
         specification: item.specification
       }));
 
@@ -247,12 +247,7 @@ const NewOrder = () => {
       success = await orderService.createOrder(orderData);
       if (success) {
         setCart([]);
-        queryClient.invalidateQueries({ queryKey: ['activeOrders'] }); 
-        // Keep table number for potential next order on same table, or clear if desired:
-        // setTableNumber(""); 
-        // setTempTableNumber("");
-        // Optionally navigate away, e.g., to active orders or dashboard
-        // navigate('/active-orders'); 
+        queryClient.invalidateQueries({ queryKey: ['activeOrders'] });
       }
     }
   };
